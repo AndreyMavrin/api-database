@@ -14,14 +14,10 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/user/")
 	nickname := strings.TrimSuffix(RequestUrl, "/create")
-
-	if CheckUser(nickname) {
-		w.WriteHeader(http.StatusConflict)
-		return
-	}
 
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -29,8 +25,26 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
 	user.Nickname = nickname
+
+	if CheckUserByEmail(user.Email) || CheckUserByNickname(nickname) {
+		users, err := SelectUser(user.Email, user.Nickname)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		body, err := json.Marshal(users)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusConflict)
+		w.Write(body)
+		return
+	}
+
 	err = InsertUser(user)
 	if err != nil {
 		log.Println(err)
