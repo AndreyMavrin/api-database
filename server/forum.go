@@ -17,6 +17,24 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if CheckForum(forum.Slug) {
+		forum, err := SelectForum(forum.Slug)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		body, err := json.Marshal(forum)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusConflict)
+		w.Write(body)
+		return
+	}
+
 	err = InsertForum(forum)
 	if err != nil {
 		log.Println(err)

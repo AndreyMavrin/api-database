@@ -44,36 +44,34 @@ func SelectUserByNickname(nickname string) (models.User, error) {
 	row := models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname ILIKE $1;`, nickname)
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
-	if err != nil {
-		return u, err
-	}
-	return u, nil
+	return u, err
+
 }
 
-func UpdateUser(user models.User) (models.User, error) {
-	if user.About != "" {
-		_, err := models.DB.Exec(`UPDATE users SET about=$1 WHERE nickname=$2;`, user.About, user.Nickname)
+func UpdateUser(user, userUpdate models.User) error {
+	if userUpdate.About != "" {
+		_, err := models.DB.Exec(`UPDATE users SET about=$1 WHERE about=$2;`, userUpdate.About, user.About)
 		if err != nil {
-			return user, err
+			return err
 		}
 	}
-	if user.Email != "" {
-		_, err := models.DB.Exec(`UPDATE users SET email=$1 WHERE nickname=$2;`, user.Email, user.Nickname)
+	if userUpdate.Email != "" {
+		_, err := models.DB.Exec(`UPDATE users SET email=$1 WHERE email=$2;`, userUpdate.Email, user.Email)
 		if err != nil {
-			return user, err
+			return err
 		}
 	}
-	if user.Fullname != "" {
-		_, err := models.DB.Exec(`UPDATE users SET fullname=$1 WHERE nickname=$2;`, user.Fullname, user.Nickname)
+	if userUpdate.Fullname != "" {
+		_, err := models.DB.Exec(`UPDATE users SET fullname=$1 WHERE fullname=$2;`, userUpdate.Fullname, user.Fullname)
 		if err != nil {
-			return user, err
+			return err
 		}
 	}
-	if user.Nickname != "" {
-		_, err := models.DB.Exec(`UPDATE users SET nickname=$1 WHERE nickname=$2;`, user.Nickname, user.Nickname)
+	if userUpdate.Nickname != "" {
+		_, err := models.DB.Exec(`UPDATE users SET nickname=$1 WHERE nickname=$2;`, userUpdate.Nickname, user.Nickname)
 		if err != nil {
-			return user, err
+			return err
 		}
 	}
-	return user, nil
+	return nil
 }

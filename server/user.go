@@ -75,8 +75,6 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/user/")
 	nickname := strings.TrimSuffix(RequestUrl, "/profile")
 
-	var user models.User
-
 	if r.Method == "GET" {
 		if !CheckUserByNickname(nickname) {
 			w.WriteHeader(http.StatusNotFound)
@@ -101,62 +99,45 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&user)
+	var userUpdate models.User
+	err := json.NewDecoder(r.Body).Decode(&userUpdate)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	user.Nickname = nickname
+	userUpdate.Nickname = nickname
 
-	if CheckUserByNickname(nickname) {
-		if user.Email == "" {
-			user, err := SelectUserByNickname(user.Nickname)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			body, err := json.Marshal(user)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			w.Write(body)
-			return
-		}
-
-		if CheckUserByEmail(user.Email) {
-			w.WriteHeader(http.StatusConflict)
-			w.Write(jsonToMessage("This email is already registered"))
-			return
-		}
-
-		user, err := UpdateUser(user)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		body, err := json.Marshal(user)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
-		return
-	}
-
-	if !CheckUserByEmail(user.Email) || !CheckUserByNickname(nickname) {
+	if !CheckUserByNickname(nickname) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find user"))
 		return
 	}
 
-	body, err := json.Marshal(user)
+	if CheckUserByEmail(userUpdate.Email) {
+		w.WriteHeader(http.StatusConflict)
+		w.Write(jsonToMessage("This email is already registered"))
+		return
+	}
+
+	user, err := SelectUserByNickname(userUpdate.Nickname)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	err = UpdateUser(user, userUpdate)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	userUpdated, err := SelectUserByNickname(userUpdate.Nickname)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	body, err := json.Marshal(userUpdated)
 	if err != nil {
 		log.Println(err)
 		return
@@ -164,5 +145,6 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
+	return
 
 }
