@@ -5,3 +5,10 @@ CREATE TABLE "users" (
   "fullname" varchar NOT NULL,
   "nickname" varchar NOT NULL
 );
+
+CREATE TABLE "forums" (
+  "id" SERIAL PRIMARY KEY,
+  "slug" varchar NOT NULL,
+  "title" varchar NOT NULL,
+  "user" varchar NOT NULL
+);

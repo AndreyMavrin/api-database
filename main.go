@@ -48,6 +48,9 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/health", server.HealthHandler)
 	router.HandleFunc("/api/user/{nickname}/create", server.CreateUser).Methods(http.MethodPost)
+	router.HandleFunc("/api/user/{nickname}/profile", server.UserProfile).Methods(http.MethodGet, http.MethodPost)
+	router.HandleFunc("/api/forum/create", server.CreateForum).Methods(http.MethodPost)
+
 	http.Handle("/", router)
 
 	fmt.Println("Starting server at: 5000")
