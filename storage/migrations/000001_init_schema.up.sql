@@ -12,3 +12,13 @@ CREATE TABLE "forums" (
   "title" varchar NOT NULL,
   "username" varchar NOT NULL
 );
+
+CREATE TABLE "threads" (
+  "id" SERIAL PRIMARY KEY,
+  "author" varchar NOT NULL,
+  "created" varchar NOT NULL,
+  "forum" varchar NOT NULL,
+  "message" varchar NOT NULL,
+  "slug" varchar NOT NULL,
+  "title" varchar NOT NULL
+);
