@@ -11,10 +11,29 @@ type User struct {
 	Nickname string `json:"nickname"`
 }
 
+type UserUpdate struct {
+	About    string `json:"about"`
+	Email    string `json:"email"`
+	Fullname string `json:"fullname"`
+}
+
 type Forum struct {
-	Slug  string `json:"slug"`
-	Title string `json:"title"`
-	User  string `json:"user"`
+	Posts   int    `json:"posts"`
+	Slug    string `json:"slug"`
+	Threads int    `json:"threads"`
+	Title   string `json:"title"`
+	User    string `json:"user"`
+}
+
+type Thread struct {
+	Author  string `json:"author"`
+	Created string `json:"created"`
+	Forum   string `json:"forum"`
+	ID      int    `json:"id"`
+	Message string `json:"message"`
+	Slug    string `json:"slug"`
+	Title   string `json:"title"`
+	Votes   int    `json:"votes"`
 }
 
 type Error struct {

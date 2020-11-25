@@ -48,7 +48,7 @@ func SelectUserByNickname(nickname string) (models.User, error) {
 
 }
 
-func UpdateUser(user, userUpdate models.User) error {
+func UpdateUser(user models.User, userUpdate models.UserUpdate) error {
 	if userUpdate.About != "" {
 		_, err := models.DB.Exec(`UPDATE users SET about=$1 WHERE about=$2;`, userUpdate.About, user.About)
 		if err != nil {
@@ -63,12 +63,6 @@ func UpdateUser(user, userUpdate models.User) error {
 	}
 	if userUpdate.Fullname != "" {
 		_, err := models.DB.Exec(`UPDATE users SET fullname=$1 WHERE fullname=$2;`, userUpdate.Fullname, user.Fullname)
-		if err != nil {
-			return err
-		}
-	}
-	if userUpdate.Nickname != "" {
-		_, err := models.DB.Exec(`UPDATE users SET nickname=$1 WHERE nickname=$2;`, userUpdate.Nickname, user.Nickname)
 		if err != nil {
 			return err
 		}

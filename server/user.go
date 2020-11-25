@@ -99,13 +99,12 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userUpdate models.User
+	var userUpdate models.UserUpdate
 	err := json.NewDecoder(r.Body).Decode(&userUpdate)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	userUpdate.Nickname = nickname
 
 	if !CheckUserByNickname(nickname) {
 		w.WriteHeader(http.StatusNotFound)
@@ -119,7 +118,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := SelectUserByNickname(userUpdate.Nickname)
+	user, err := SelectUserByNickname(nickname)
 	if err != nil {
 		log.Println(err)
 		return
@@ -131,7 +130,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userUpdated, err := SelectUserByNickname(userUpdate.Nickname)
+	userUpdated, err := SelectUserByNickname(nickname)
 	if err != nil {
 		log.Println(err)
 		return
