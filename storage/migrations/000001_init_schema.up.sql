@@ -16,7 +16,7 @@ CREATE TABLE "forums" (
 CREATE TABLE "threads" (
   "id" SERIAL PRIMARY KEY,
   "author" varchar NOT NULL,
-  "created" varchar NOT NULL,
+  "created" timestamptz NOT NULL,
   "forum" varchar NOT NULL,
   "message" varchar NOT NULL,
   "slug" varchar NOT NULL,

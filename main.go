@@ -52,6 +52,7 @@ func main() {
 	router.HandleFunc("/api/forum/create", server.CreateForum).Methods(http.MethodPost)
 	router.HandleFunc("/api/forum/{slug}/details", server.ForumDetails).Methods(http.MethodGet)
 	router.HandleFunc("/api/forum/{slug}/create", server.CreateForumSlug).Methods(http.MethodPost)
+	router.HandleFunc("/api/forum/{slug}/threads", server.ForumThreads).Methods(http.MethodGet)
 
 	http.Handle("/", router)
 

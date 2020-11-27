@@ -1,6 +1,9 @@
 package models
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 var DB *sql.DB
 
@@ -26,14 +29,14 @@ type Forum struct {
 }
 
 type Thread struct {
-	Author  string `json:"author"`
-	Created string `json:"created"`
-	Forum   string `json:"forum"`
-	ID      int    `json:"id"`
-	Message string `json:"message"`
-	Slug    string `json:"slug"`
-	Title   string `json:"title"`
-	Votes   int    `json:"votes"`
+	Author  string    `json:"author"`
+	Created time.Time `json:"created"`
+	Forum   string    `json:"forum"`
+	ID      int       `json:"id"`
+	Message string    `json:"message"`
+	Slug    string    `json:"slug"`
+	Title   string    `json:"title"`
+	Votes   int       `json:"votes"`
 }
 
 type Error struct {
