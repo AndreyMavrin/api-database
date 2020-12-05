@@ -39,6 +39,17 @@ type Thread struct {
 	Votes   int       `json:"votes"`
 }
 
+type Post struct {
+	Author   string    `json:"author"`
+	Created  time.Time `json:"created"`
+	Forum    string    `json:"forum"`
+	ID       int       `json:"id"`
+	IsEdited bool      `json:"isEdited"`
+	Message  string    `json:"message"`
+	Parent   int       `json:"parent"`
+	Thread   int       `json:"thread,"`
+}
+
 type Error struct {
 	Message string `json:"message"`
 }

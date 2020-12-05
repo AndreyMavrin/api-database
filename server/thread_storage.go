@@ -40,13 +40,14 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 	var threads []models.Thread
 	var rows *sql.Rows
 	var err error
+
 	if since != "" {
 		if desc {
 			rows, err = models.DB.Query(`SELECT author, created, forum, message, slug, title FROM threads
-		WHERE forum ILIKE $1 AND created < $2 ::date + '1 day'::interval ORDER BY created DESC LIMIT $3;`, forum, since, limit)
+		WHERE forum ILIKE $1 AND created <= $2 ORDER BY created DESC LIMIT $3;`, forum, since, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT author, created, forum, message, slug, title FROM threads
-		WHERE forum ILIKE $1 AND created < $2 ::date + '1 day'::interval ORDER BY created ASC LIMIT $3;`, forum, since, limit)
+		WHERE forum ILIKE $1 AND created >= $2 ORDER BY created ASC LIMIT $3;`, forum, since, limit)
 		}
 	} else {
 		if desc {

@@ -22,3 +22,11 @@ CREATE TABLE "threads" (
   "slug" varchar NOT NULL,
   "title" varchar NOT NULL
 );
+
+CREATE TABLE "posts" (
+  "id" SERIAL PRIMARY KEY,
+  "author" varchar NOT NULL,
+  "created" timestamptz NOT NULL,
+  "forum" varchar NOT NULL,
+  "message" varchar NOT NULL
+);
