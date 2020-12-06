@@ -108,19 +108,29 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !CheckThreadByAuthor(thread.Author) && !CheckThreadByForum(slug) {
+	if !CheckUserByNickname(thread.Author) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread"))
+		w.Write(jsonToMessage("Can't find thread author"))
 		return
 	}
 
-	if CheckThread(slug) {
-		thread, err := SelectThread(slug)
+	if !CheckThreadByForum(slug) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread forum"))
+		return
+	}
+
+	thread.Forum = slug
+	thread.ID = 1
+
+	if CheckThread(thread.Slug) && thread.Slug != "" {
+		thread, err := SelectThread(thread.Slug)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
+		thread.ID = 1
 		body, err := json.Marshal(thread)
 		if err != nil {
 			log.Println(err)
@@ -132,13 +142,37 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if CheckThreadByForum(slug) {
+		forum, err := SelectForum(slug)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		thread.Forum = forum.Slug
+		thread.ID = 1
+		err = InsertThread(thread)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		body, err := json.Marshal(thread)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write(body)
+		return
+	}
+
 	err = InsertThread(thread)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
-	thread.ID = 1
 
 	body, err := json.Marshal(thread)
 	if err != nil {

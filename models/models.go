@@ -50,6 +50,11 @@ type Post struct {
 	Thread   int       `json:"thread,"`
 }
 
+type Vote struct {
+	Nickname string `json:"nickname"`
+	Voice    int    `json:"voice"`
+}
+
 type Error struct {
 	Message string `json:"message"`
 }

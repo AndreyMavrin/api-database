@@ -11,12 +11,6 @@ func InsertThread(thread models.Thread) error {
 	return err
 }
 
-func CheckThreadByAuthor(author string) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM users WHERE author ILIKE $1;`, author).Scan(&count)
-	return count > 0
-}
-
 func CheckThreadByForum(slug string) bool {
 	var count int
 	models.DB.QueryRow(`SELECT COUNT(id) FROM forums WHERE slug ILIKE $1;`, slug).Scan(&count)
@@ -31,6 +25,13 @@ func CheckThread(slug string) bool {
 
 func SelectThread(slug string) (models.Thread, error) {
 	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title FROM threads WHERE slug ILIKE $1;`, slug)
+	var th models.Thread
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title)
+	return th, err
+}
+
+func SelectThreadByAuthor(author string) (models.Thread, error) {
+	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title FROM threads WHERE author ILIKE $1;`, author)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title)
 	return th, err

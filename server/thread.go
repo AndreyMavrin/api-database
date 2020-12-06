@@ -54,53 +54,24 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreatePosts(w http.ResponseWriter, r *http.Request) {
+func VoteThread(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var posts []models.Post
-	err := json.NewDecoder(r.Body).Decode(&posts)
+	var vote models.Vote
+	err := json.NewDecoder(r.Body).Decode(&vote)
 	if err != nil {
 		log.Println(err)
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("[]"))
 		return
 	}
 
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
-	slugOrID := strings.TrimSuffix(RequestUrl, "/create")
+	slugOrID := strings.TrimSuffix(RequestUrl, "/vote")
 
-	var postsCreated []models.Post
-	id, errInt := strconv.Atoi(slugOrID)
+	_, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
-		for _, post := range posts {
-
-			slug := slugOrID
-			post.Author = slug
-			post.ID = 1
-			post.Forum = "asdf"
-			postsCreated = append(postsCreated, post)
-		}
 
 	} else {
-		for _, post := range posts {
-			post.Thread = id
-			post.ID = 1
-			post.Forum = "asdf"
-			postsCreated = append(postsCreated, post)
-		}
-	}
 
-	body, err := json.Marshal(postsCreated)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	if len(postsCreated) != 0 {
-		w.Write(body)
-	} else {
-		w.Write([]byte("[]"))
 	}
 }
