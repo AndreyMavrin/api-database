@@ -6,13 +6,13 @@ import (
 
 func CheckUserByEmail(email string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE email ILIKE $1;`, email).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(id) FROM users WHERE email ILIKE $1;`, email).Scan(&count)
 	return count > 0
 }
 
 func CheckUserByNickname(nickname string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE nickname ILIKE $1;`, nickname).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(id) FROM users WHERE nickname ILIKE $1;`, nickname).Scan(&count)
 	return count > 0
 }
 

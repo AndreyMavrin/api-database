@@ -56,6 +56,7 @@ func main() {
 	router.HandleFunc("/api/thread/{slug_or_id}/create", server.CreatePosts).Methods(http.MethodPost)
 	router.HandleFunc("/api/thread/{slug_or_id}/vote", server.VoteThread).Methods(http.MethodPost)
 	router.HandleFunc("/api/thread/{slug_or_id}/details", server.ThreadDetails).Methods(http.MethodGet, http.MethodPost)
+	router.HandleFunc("/api/thread/{slug_or_id}/posts", server.ThreadPosts).Methods(http.MethodGet)
 
 	http.Handle("/", router)
 

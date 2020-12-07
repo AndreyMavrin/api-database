@@ -27,9 +27,10 @@ CREATE TABLE "threads" (
 CREATE TABLE "posts" (
   "id" SERIAL PRIMARY KEY,
   "author" varchar NOT NULL,
-  "created" timestamptz NOT NULL,
+  "created" timestamp NOT NULL,
   "forum" varchar NOT NULL,
-  "message" varchar NOT NULL
+  "message" varchar NOT NULL,
+  "parent" int DEFAULT 0 
 );
 
 CREATE TABLE "votes" (
