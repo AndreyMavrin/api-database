@@ -20,7 +20,8 @@ CREATE TABLE "threads" (
   "forum" varchar NOT NULL,
   "message" varchar NOT NULL,
   "slug" varchar NOT NULL,
-  "title" varchar NOT NULL
+  "title" varchar NOT NULL,
+  "votes" int DEFAULT 0 
 );
 
 CREATE TABLE "posts" (
@@ -29,4 +30,10 @@ CREATE TABLE "posts" (
   "created" timestamptz NOT NULL,
   "forum" varchar NOT NULL,
   "message" varchar NOT NULL
+);
+
+CREATE TABLE "votes" (
+  "id" SERIAL PRIMARY KEY,
+  "nickname" varchar NOT NULL,
+  "voice" int NOT NULL 
 );

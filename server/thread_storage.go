@@ -24,9 +24,9 @@ func CheckThread(slug string) bool {
 }
 
 func SelectThread(slug string) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title FROM threads WHERE slug ILIKE $1;`, slug)
+	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title, votes FROM threads WHERE slug ILIKE $1;`, slug)
 	var th models.Thread
-	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title)
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
 }
 
@@ -34,6 +34,13 @@ func SelectThreadByAuthor(author string) (models.Thread, error) {
 	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title FROM threads WHERE author ILIKE $1;`, author)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title)
+	return th, err
+}
+
+func SelectLastThread() (models.Thread, error) {
+	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title, votes FROM threads where id = (SELECT MAX(id) FROM threads);`)
+	var th models.Thread
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
 }
 

@@ -10,6 +10,6 @@ func InsertPost(post models.Post) error {
 
 func CheckPost(slug string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM posts WHERE slug ILIKE $1;`, slug).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(*) FROM posts WHERE slug ILIKE $1;`, slug).Scan(&count)
 	return count > 0
 }

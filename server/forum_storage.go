@@ -12,7 +12,7 @@ func InsertForum(forum models.Forum) error {
 
 func CheckForum(slug string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM forums WHERE slug ILIKE $1;`, slug).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(*) FROM forums WHERE slug ILIKE $1;`, slug).Scan(&count)
 	return count > 0
 }
 
