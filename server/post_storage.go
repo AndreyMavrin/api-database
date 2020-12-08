@@ -16,12 +16,22 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 	var rows *sql.Rows
 	var err error
 
-	if desc {
-		rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
-		WHERE author ILIKE $1 ORDER BY created DESC LIMIT $2;`, author, limit)
+	if sort == "flat" {
+		if desc {
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
+		WHERE author ILIKE $1 ORDER BY created DESC, id LIMIT $2;`, author, limit)
+		} else {
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
+		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
+		}
 	} else {
-		rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
-		WHERE author ILIKE $1 ORDER BY created ASC LIMIT $2;`, author, limit)
+		if desc {
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
+		WHERE author ILIKE $1 ORDER BY created DESC, id LIMIT $2;`, author, limit)
+		} else {
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
+		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
+		}
 	}
 
 	if err != nil {
