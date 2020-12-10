@@ -6,8 +6,8 @@ import (
 )
 
 func InsertPost(post models.Post) error {
-	_, err := models.DB.Exec(`INSERT INTO posts(author, created, forum, message, parent) VALUES ($1, $2, $3, $4, $5);`,
-		post.Author, post.Created, post.Forum, post.Message, post.Parent)
+	_, err := models.DB.Exec(`INSERT INTO posts(author, created, forum, message, parent, thread) VALUES ($1, $2, $3, $4, nullif($5, 0), $6);`,
+		post.Author, post.Created, post.Forum, post.Message, post.Parent, post.Thread)
 	return err
 }
 
@@ -18,19 +18,19 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 
 	if sort == "flat" {
 		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
 		WHERE author ILIKE $1 ORDER BY created DESC, id LIMIT $2;`, author, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
 		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
 		}
 	} else {
 		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
-		WHERE author ILIKE $1 ORDER BY created DESC, id LIMIT $2;`, author, limit)
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
+		WHERE author ILIKE $1 ORDER BY path DESC, id  DESC LIMIT $2;`, author, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, parent FROM posts
-		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
+			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
+		WHERE author ILIKE $1 ORDER BY path, id LIMIT $2;`, author, limit)
 		}
 	}
 

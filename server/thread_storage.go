@@ -13,7 +13,7 @@ func InsertThread(thread models.Thread) error {
 
 func CheckThreadByForum(slug string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM forums WHERE slug ILIKE $1;`, slug).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(*) FROM forums WHERE slug ILIKE $1;`, slug).Scan(&count)
 	return count > 0
 }
 
@@ -37,8 +37,8 @@ func SelectThreadByAuthor(author string) (models.Thread, error) {
 	return th, err
 }
 
-func SelectLastThread() (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title, votes FROM threads where id = (SELECT MAX(id) FROM threads);`)
+func SelectThreadByID(id int) (models.Thread, error) {
+	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title, votes FROM threads WHERE id = (SELECT MAX(id) FROM threads);`)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err

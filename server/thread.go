@@ -75,7 +75,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var thread models.Thread
-	_, errInt := strconv.Atoi(slugOrID)
+	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
 
@@ -86,7 +86,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		thread, err = SelectLastThread()
+		thread, err = SelectThreadByID(id)
 		if err != nil {
 			log.Println(err)
 			return
@@ -163,7 +163,7 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		var thread models.Thread
 
-		_, errInt := strconv.Atoi(slugOrID)
+		id, errInt := strconv.Atoi(slugOrID)
 		if errInt != nil {
 			slug := slugOrID
 			if !CheckThread(slug) {
@@ -181,7 +181,7 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 			var err error
-			thread, err = SelectLastThread()
+			thread, err = SelectThreadByID(id)
 			if err != nil {
 				log.Println(err)
 				return

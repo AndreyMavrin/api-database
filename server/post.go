@@ -12,8 +12,32 @@ import (
 func CreatePosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
+	slugOrID := strings.TrimSuffix(RequestUrl, "/create")
+
+	var thread models.Thread
+	var err error
+	id, errInt := strconv.Atoi(slugOrID)
+	if errInt != nil {
+		slug := slugOrID
+		thread, err = SelectThread(slug)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+	} else {
+		thread, err = SelectThreadByID(id)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+	}
+
 	var posts []models.Post
-	err := json.NewDecoder(r.Body).Decode(&posts)
+	err = json.NewDecoder(r.Body).Decode(&posts)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusCreated)
@@ -21,14 +45,9 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// mu := &sync.Mutex{}
 	var postsCreated []models.Post
 	for _, post := range posts {
-		thread, err := SelectThreadByAuthor(post.Author)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+
 		post.Thread = 1
 		post.ID = 1
 		post.Forum = thread.Forum
