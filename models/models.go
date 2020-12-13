@@ -2,7 +2,10 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
+
+	"github.com/jackc/pgtype"
 )
 
 var DB *sql.DB
@@ -45,19 +48,47 @@ type ThreadUpdate struct {
 }
 
 type Post struct {
-	Author   string    `json:"author"`
-	Created  time.Time `json:"created"`
-	Forum    string    `json:"forum"`
-	ID       int       `json:"id"`
-	IsEdited bool      `json:"isEdited"`
-	Message  string    `json:"message"`
-	Parent   int       `json:"parent"`
-	Thread   int       `json:"thread,"`
+	Author   string           `json:"author"`
+	Created  time.Time        `json:"created"`
+	Forum    string           `json:"forum"`
+	ID       int              `json:"id"`
+	IsEdited bool             `json:"isEdited"`
+	Message  string           `json:"message"`
+	Parent   JsonNullInt64    `json:"parent"`
+	Thread   int              `json:"thread,"`
+	Path     pgtype.Int8Array `json:"-"`
+}
+
+type JsonNullInt64 struct {
+	sql.NullInt64
+}
+
+func (v JsonNullInt64) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.Int64)
+	} else {
+		return json.Marshal(nil)
+	}
+}
+
+func (v *JsonNullInt64) UnmarshalJSON(data []byte) error {
+	var x *int64
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		v.Valid = true
+		v.Int64 = *x
+	} else {
+		v.Valid = false
+	}
+	return nil
 }
 
 type Vote struct {
 	Nickname string `json:"nickname"`
 	Voice    int    `json:"voice"`
+	Thread   int    `json:"-"`
 }
 
 type Error struct {

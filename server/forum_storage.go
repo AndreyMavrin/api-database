@@ -17,8 +17,8 @@ func CheckForum(slug string) bool {
 }
 
 func SelectForum(slug string) (models.Forum, error) {
-	row := models.DB.QueryRow(`SELECT slug, title, username FROM forums WHERE slug ILIKE $1;`, slug)
+	row := models.DB.QueryRow(`SELECT username, posts, threads, slug, title FROM forums WHERE slug ILIKE $1;`, slug)
 	var f models.Forum
-	err := row.Scan(&f.Slug, &f.Title, &f.User)
+	err := row.Scan(&f.User, &f.Posts, &f.Threads, &f.Slug, &f.Title)
 	return f, err
 }

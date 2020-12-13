@@ -121,7 +121,6 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 	}
 
 	thread.Forum = slug
-	thread.ID = 1
 
 	if CheckThread(thread.Slug) && thread.Slug != "" {
 		thread, err := SelectThread(thread.Slug)
@@ -130,7 +129,6 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		thread.ID = 1
 		body, err := json.Marshal(thread)
 		if err != nil {
 			log.Println(err)
@@ -150,8 +148,7 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		}
 
 		thread.Forum = forum.Slug
-		thread.ID = 1
-		err = InsertThread(thread)
+		thread, err = InsertThread(thread)
 		if err != nil {
 			log.Println(err)
 			return
@@ -168,7 +165,7 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = InsertThread(thread)
+	thread, err = InsertThread(thread)
 	if err != nil {
 		log.Println(err)
 		return

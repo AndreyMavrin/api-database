@@ -16,11 +16,11 @@ CREATE TABLE "forums" (
 
 CREATE TABLE "threads" (
   "author" varchar NOT NULL,
-  "created" timestamptz NOT NULL,
+  "created" timestamptz DEFAULT now(),
   "forum" varchar NOT NULL,
   "id" SERIAL PRIMARY KEY,
   "message" varchar NOT NULL,
-  "slug" varchar NOT NULL,
+  "slug" varchar,
   "title" varchar NOT NULL,
   "votes" int DEFAULT 0,
   FOREIGN KEY (author) REFERENCES "users" (nickname),
@@ -29,7 +29,7 @@ CREATE TABLE "threads" (
 
 CREATE TABLE "posts" (
   "author" varchar NOT NULL,
-  "created" timestamp NOT NULL,
+  "created" timestamp DEFAULT now(),
   "forum" varchar NOT NULL,
   "id" BIGSERIAL PRIMARY KEY,
   "message" varchar NOT NULL,
@@ -43,12 +43,22 @@ CREATE TABLE "posts" (
   FOREIGN KEY (parent) REFERENCES "posts" (id)
 );
 
-
 CREATE TABLE "votes" (
-  "id" SERIAL PRIMARY KEY,
   "nickname" varchar NOT NULL,
-  "voice" int NOT NULL 
+  "voice" int,
+  "thread" int,
+  
+   FOREIGN KEY (nickname) REFERENCES "users" (nickname),
+   FOREIGN KEY (thread) REFERENCES "threads" (id)
 );
+
+CREATE OR REPLACE FUNCTION update_threads_count() RETURNS TRIGGER AS
+$update_users_forum$
+BEGIN
+    UPDATE forums SET Threads=(Threads+1) WHERE LOWER(slug)=LOWER(NEW.forum);
+    return NEW;
+end
+$update_users_forum$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION update_path() RETURNS TRIGGER AS
 $update_path$
@@ -62,7 +72,7 @@ BEGIN
         SELECT path FROM posts WHERE id = new.parent INTO parent_path;
         SELECT thread FROM posts WHERE id = parent_path[1] INTO first_parent_thread;
         IF NOT FOUND OR first_parent_thread != NEW.thread THEN
-            RAISE EXCEPTION 'parent is from different thread' USING ERRCODE = '00409';
+            RAISE EXCEPTION 'parent is from different thread';
         end if;
 
         NEW.path := NEW.path || parent_path || new.id;
@@ -72,12 +82,18 @@ BEGIN
 end
 $update_path$ LANGUAGE plpgsql;
 
-
-
-CREATE OR REPLACE FUNCTION update_threads_count() RETURNS TRIGGER AS
+CREATE OR REPLACE FUNCTION insert_votes() RETURNS TRIGGER AS
 $update_users_forum$
 BEGIN
-    UPDATE forums SET Threads=(Threads+1) WHERE LOWER(slug)=LOWER(NEW.forum);
+    UPDATE threads SET votes=(votes+NEW.voice) WHERE id=NEW.thread;
+    return NEW;
+end
+$update_users_forum$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION update_votes() RETURNS TRIGGER AS
+$update_users_forum$
+BEGIN
+    UPDATE threads SET votes=(votes+NEW.voice*2) WHERE id=NEW.thread;
     return NEW;
 end
 $update_users_forum$ LANGUAGE plpgsql;
@@ -94,3 +110,15 @@ CREATE TRIGGER path_update_trigger
     ON posts
     FOR EACH ROW
 EXECUTE PROCEDURE update_path();
+
+CREATE TRIGGER add_vote
+    BEFORE INSERT
+    ON votes
+    FOR EACH ROW
+EXECUTE PROCEDURE insert_votes();
+
+CREATE TRIGGER edit_vote
+    BEFORE UPDATE
+    ON votes
+    FOR EACH ROW
+EXECUTE PROCEDURE update_votes();

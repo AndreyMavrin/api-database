@@ -5,10 +5,12 @@ import (
 	"park_2020/api-database/models"
 )
 
-func InsertThread(thread models.Thread) error {
-	_, err := models.DB.Exec(`INSERT INTO threads(author, created, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5, $6);`,
+func InsertThread(thread models.Thread) (models.Thread, error) {
+	row := models.DB.QueryRow(`INSERT INTO threads(author, created, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
 		thread.Author, thread.Created, thread.Forum, thread.Message, thread.Slug, thread.Title)
-	return err
+	var th models.Thread
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
+	return th, err
 }
 
 func CheckThreadByForum(slug string) bool {
@@ -24,23 +26,16 @@ func CheckThread(slug string) bool {
 }
 
 func SelectThread(slug string) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title, votes FROM threads WHERE slug ILIKE $1;`, slug)
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug ILIKE $1;`, slug)
 	var th models.Thread
-	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title, &th.Votes)
-	return th, err
-}
-
-func SelectThreadByAuthor(author string) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title FROM threads WHERE author ILIKE $1;`, author)
-	var th models.Thread
-	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title)
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
 }
 
 func SelectThreadByID(id int) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, message, slug, title, votes FROM threads WHERE id = (SELECT MAX(id) FROM threads);`)
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE id = $1;`, id)
 	var th models.Thread
-	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title, &th.Votes)
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
 }
 
@@ -51,18 +46,18 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 
 	if since != "" {
 		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, slug, title FROM threads
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
 		WHERE forum ILIKE $1 AND created <= $2 ORDER BY created DESC LIMIT $3;`, forum, since, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, slug, title FROM threads
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
 		WHERE forum ILIKE $1 AND created >= $2 ORDER BY created ASC LIMIT $3;`, forum, since, limit)
 		}
 	} else {
 		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, slug, title FROM threads
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
 		WHERE forum ILIKE $1 ORDER BY created DESC LIMIT $2;`, forum, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, slug, title FROM threads
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
 		WHERE forum ILIKE $1 ORDER BY created ASC LIMIT $2;`, forum, limit)
 		}
 	}
@@ -74,11 +69,10 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 
 	for rows.Next() {
 		var th models.Thread
-		err = rows.Scan(&th.Author, &th.Created, &th.Forum, &th.Message, &th.Slug, &th.Title)
+		err = rows.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 		if err != nil {
 			continue
 		}
-		th.ID = 1
 		threads = append(threads, th)
 	}
 	return threads, nil

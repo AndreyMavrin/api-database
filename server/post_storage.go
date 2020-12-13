@@ -5,10 +5,12 @@ import (
 	"park_2020/api-database/models"
 )
 
-func InsertPost(post models.Post) error {
-	_, err := models.DB.Exec(`INSERT INTO posts(author, created, forum, message, parent, thread) VALUES ($1, $2, $3, $4, nullif($5, 0), $6);`,
+func InsertPost(post models.Post) (models.Post, error) {
+	row := models.DB.QueryRow(`INSERT INTO posts(author, created, forum, message, parent, thread) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
 		post.Author, post.Created, post.Forum, post.Message, post.Parent, post.Thread)
-	return err
+	var p models.Post
+	err := row.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.Message, &p.Parent, &p.Thread, &p.Path)
+	return p, err
 }
 
 func SelectPosts(author string, limit, since int, sort string, desc bool) ([]models.Post, error) {
@@ -16,21 +18,31 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 	var rows *sql.Rows
 	var err error
 
-	if sort == "flat" {
+	if sort == "flat" || sort == "" {
 		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
-		WHERE author ILIKE $1 ORDER BY created DESC, id LIMIT $2;`, author, limit)
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+		WHERE author ILIKE $1 ORDER BY created DESC, id DESC LIMIT $2;`, author, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
 		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
+		}
+	} else if sort == "tree" {
+		if desc {
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+		WHERE author ILIKE $1 ORDER BY path DESC, id  DESC LIMIT $2;`, author, limit)
+		} else {
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+		WHERE author ILIKE $1 ORDER BY path, id LIMIT $2;`, author, limit)
 		}
 	} else {
 		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
-		WHERE author ILIKE $1 ORDER BY path DESC, id  DESC LIMIT $2;`, author, limit)
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id DESC)
+			ORDER BY path[1] DESC, path, id LIMIT $2;`, author, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, message, COALESCE(parent, 0) FROM posts
-		WHERE author ILIKE $1 ORDER BY path, id LIMIT $2;`, author, limit)
+			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id)
+			ORDER BY path, id LIMIT $2;`, author, limit)
 		}
 	}
 
@@ -41,12 +53,10 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 
 	for rows.Next() {
 		var p models.Post
-		err = rows.Scan(&p.Author, &p.Created, &p.Forum, &p.Message, &p.Parent)
+		err = rows.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.Message, &p.Parent, &p.Thread)
 		if err != nil {
-			continue
+			return posts, err
 		}
-		p.ID = 1
-		p.Thread = 1
 
 		posts = append(posts, p)
 	}

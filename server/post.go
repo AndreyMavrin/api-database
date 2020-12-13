@@ -47,12 +47,10 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 
 	var postsCreated []models.Post
 	for _, post := range posts {
-
-		post.Thread = 1
-		post.ID = 1
+		post.Thread = thread.ID
 		post.Forum = thread.Forum
 
-		err = InsertPost(post)
+		post, err = InsertPost(post)
 		if err != nil {
 			log.Println(err)
 			return
@@ -99,7 +97,8 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slugOrID := strings.TrimSuffix(RequestUrl, "/posts")
 
-	_, errInt := strconv.Atoi(slugOrID)
+	var thread models.Thread
+	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
 		if !CheckThread(slug) {
@@ -108,27 +107,32 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		thread, err := SelectThread(slug)
+		thread, err = SelectThread(slug)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		posts, err := SelectPosts(thread.Author, limit, since, sort, desc)
+	} else {
+		thread, err = SelectThreadByID(id)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-
-		body, err := json.Marshal(posts)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
-
 	}
 
+	posts, err := SelectPosts(thread.Author, limit, since, sort, desc)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	body, err := json.Marshal(posts)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }

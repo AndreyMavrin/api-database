@@ -93,6 +93,8 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	vote.Thread = thread.ID
+
 	if !CheckVote(vote.Nickname) {
 		err = InsertVote(vote)
 		if err != nil {
@@ -140,8 +142,6 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread.ID = 1
-
 	body, err := json.Marshal(thread)
 	if err != nil {
 		log.Println(err)
@@ -188,7 +188,6 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		thread.ID = 1
 		body, err := json.Marshal(thread)
 		if err != nil {
 			log.Println(err)
@@ -212,5 +211,4 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
 }

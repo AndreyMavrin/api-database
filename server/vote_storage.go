@@ -6,12 +6,12 @@ import (
 
 func CheckVote(user string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM votes WHERE nickname ILIKE $1;`, user).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(*) FROM votes WHERE nickname ILIKE $1;`, user).Scan(&count)
 	return count > 0
 }
 
 func InsertVote(vote models.Vote) error {
-	_, err := models.DB.Exec(`INSERT INTO votes(nickname, voice) VALUES ($1, $2);`, vote.Nickname, vote.Voice)
+	_, err := models.DB.Exec(`INSERT INTO votes(nickname, voice, thread) VALUES ($1, $2, NULLIF($3, 0));`, vote.Nickname, vote.Voice, vote.Thread)
 	return err
 }
 
