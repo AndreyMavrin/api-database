@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"park_2020/api-database/models"
+	"strconv"
 	"strings"
 )
 
@@ -85,6 +86,50 @@ func ForumDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, err := json.Marshal(forum)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+
+}
+
+func ForumUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/forum/")
+	slug := strings.TrimSuffix(RequestUrl, "/users")
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 0
+	}
+
+	since, err := strconv.Atoi(r.URL.Query().Get("since"))
+	if err != nil {
+		since = 0
+	}
+
+	desc, err := strconv.ParseBool(r.URL.Query().Get("desc"))
+	if err != nil {
+		desc = false
+	}
+
+	if !CheckForum(slug) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find forum"))
+		return
+	}
+
+	users, err := SelectUsersByForum(slug, since, limit, desc)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	body, err := json.Marshal(users)
 	if err != nil {
 		log.Println(err)
 		return

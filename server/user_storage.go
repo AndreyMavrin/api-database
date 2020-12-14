@@ -1,7 +1,10 @@
 package server
 
 import (
+	"database/sql"
 	"park_2020/api-database/models"
+
+	"github.com/lib/pq"
 )
 
 func InsertUser(user models.User) error {
@@ -45,7 +48,6 @@ func SelectUserByNickname(nickname string) (models.User, error) {
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
 	return u, err
-
 }
 
 func UpdateUser(user models.User, userUpdate models.UserUpdate) error {
@@ -68,4 +70,59 @@ func UpdateUser(user models.User, userUpdate models.UserUpdate) error {
 		}
 	}
 	return nil
+}
+
+func SelectUsersByForum(slug string, since, limit int, desc bool) ([]models.User, error) {
+	var users []models.User
+	var usernames []string
+	var rows *sql.Rows
+	var err error
+	rows, err = models.DB.Query(`SELECT author FROM threads WHERE forum ILIKE $1 UNION SELECT author FROM posts WHERE forum ILIKE $1;`, slug)
+	if err != nil {
+		return users, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u string
+		err = rows.Scan(&u)
+		if err != nil {
+			return users, err
+		}
+		usernames = append(usernames, u)
+	}
+
+	if since == 0 {
+		if desc {
+			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY nickname DESC LIMIT $2;`, pq.Array(usernames), limit)
+		} else {
+			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY LOWER(nickname) LIMIT $2;`, pq.Array(usernames), limit)
+		}
+	} else {
+		if desc {
+			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY nickname DESC LIMIT $2;`, pq.Array(usernames), limit)
+		} else {
+			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY nickname LIMIT $2;`, pq.Array(usernames), limit)
+		}
+	}
+
+	if err != nil {
+		return users, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u models.User
+		err = rows.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
+		if err != nil {
+			return users, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
 }

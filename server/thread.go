@@ -199,10 +199,30 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !CheckThread(slugOrID) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread"))
-		return
+	var thread models.Thread
+	id, errInt := strconv.Atoi(slugOrID)
+	if errInt != nil {
+		slug := slugOrID
+		if !CheckThread(slug) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread"))
+			return
+		}
+
+		var err error
+		thread, err = SelectThread(slug)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+	} else {
+		var err error
+		thread, err = SelectThreadByID(id)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}
 
 	var threadUpdate models.ThreadUpdate
@@ -211,4 +231,25 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+
+	err = UpdateThread(thread, threadUpdate)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	thread, err = SelectThread(thread.Slug)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	body, err := json.Marshal(thread)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }

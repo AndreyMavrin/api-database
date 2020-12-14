@@ -77,3 +77,19 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 	}
 	return threads, nil
 }
+
+func UpdateThread(thread models.Thread, threadUpdate models.ThreadUpdate) error {
+	if threadUpdate.Message != "" {
+		_, err := models.DB.Exec(`UPDATE threads SET message=$1 WHERE message=$2;`, threadUpdate.Message, thread.Message)
+		if err != nil {
+			return err
+		}
+	}
+	if threadUpdate.Title != "" {
+		_, err := models.DB.Exec(`UPDATE threads SET title=$1 WHERE title=$2;`, threadUpdate.Title, thread.Title)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

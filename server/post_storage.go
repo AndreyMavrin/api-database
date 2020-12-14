@@ -18,31 +18,63 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 	var rows *sql.Rows
 	var err error
 
-	if sort == "flat" || sort == "" {
-		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+	if since == 0 {
+		if sort == "flat" || sort == "" {
+			if desc {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
 		WHERE author ILIKE $1 ORDER BY created DESC, id DESC LIMIT $2;`, author, limit)
-		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			} else {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
 		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
-		}
-	} else if sort == "tree" {
-		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			}
+		} else if sort == "tree" {
+			if desc {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
 		WHERE author ILIKE $1 ORDER BY path DESC, id  DESC LIMIT $2;`, author, limit)
-		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			} else {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
 		WHERE author ILIKE $1 ORDER BY path, id LIMIT $2;`, author, limit)
+			}
+		} else {
+			if desc {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id DESC LIMIT $2)
+			ORDER BY path[1] DESC, path, id;`, author, limit)
+			} else {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id LIMIT $2)
+			ORDER BY path, id;`, author, limit)
+			}
 		}
 	} else {
-		if desc {
-			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id DESC)
-			ORDER BY path[1] DESC, path, id LIMIT $2;`, author, limit)
+		if sort == "flat" || sort == "" {
+			if desc {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE author ILIKE $1 AND id < $2 ORDER BY created DESC, id DESC LIMIT $3;`, author, since, limit)
+			} else {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE author ILIKE $1 AND id > $2 ORDER BY created ASC, id LIMIT $3;`, author, since, limit)
+			}
+		} else if sort == "tree" {
+			if desc {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE author ILIKE $1 AND PATH < (SELECT path FROM posts WHERE id = $2)
+			ORDER BY path DESC, id  DESC LIMIT $3;`, author, since, limit)
+			} else {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+			WHERE author ILIKE $1 AND PATH > (SELECT path FROM posts WHERE id = $2)
+			ORDER BY path, id LIMIT $3;`, author, since, limit)
+			}
 		} else {
-			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id)
-			ORDER BY path, id LIMIT $2;`, author, limit)
+			if desc {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+				WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL AND PATH[1] <
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path, id;`, author, since, limit)
+			} else {
+				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
+				WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL AND PATH[1] >
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT $3) ORDER BY path, id;`, author, since, limit)
+			}
 		}
 	}
 

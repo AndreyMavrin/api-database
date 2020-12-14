@@ -134,5 +134,9 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(body)
+	if len(posts) != 0 {
+		w.Write(body)
+	} else {
+		w.Write([]byte("[]"))
+	}
 }
