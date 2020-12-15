@@ -92,21 +92,41 @@ func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User
 		usernames = append(usernames, u)
 	}
 
-	if since == "" {
-		if desc {
-			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $2;`, pq.Array(usernames), limit)
+	if limit == 0 {
+		if since == "" {
+			if desc {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY LOWER(nickname) COLLATE "C" DESC;`, pq.Array(usernames))
+			} else {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY LOWER(nickname) COLLATE "C";`, pq.Array(usernames))
+			}
 		} else {
-			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) COLLATE "C" LIMIT $2;`, pq.Array(usernames), limit)
+			if desc {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			AND LOWER(nickname) < LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" DESC;`, pq.Array(usernames), since)
+			} else {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			AND LOWER(nickname) > LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C";`, pq.Array(usernames), since)
+			}
 		}
 	} else {
-		if desc {
-			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			AND LOWER(nickname) < LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $3;`, pq.Array(usernames), since, limit)
+		if since == "" {
+			if desc {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $2;`, pq.Array(usernames), limit)
+			} else {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			ORDER BY LOWER(nickname) COLLATE "C" LIMIT $2;`, pq.Array(usernames), limit)
+			}
 		} else {
-			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			if desc {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
+			AND LOWER(nickname) < LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $3;`, pq.Array(usernames), since, limit)
+			} else {
+				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
 			AND LOWER(nickname) > LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" LIMIT $3;`, pq.Array(usernames), since, limit)
+			}
 		}
 	}
 

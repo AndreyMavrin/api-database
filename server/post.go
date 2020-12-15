@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"park_2020/api-database/models"
@@ -43,6 +44,16 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("[]"))
 		return
+	}
+
+	for _, post := range posts {
+		post.Thread = thread.ID
+		fmt.Println(post.Thread)
+		if post.Parent.Int64 != 0 && !CheckThreadByPost(post) {
+			w.WriteHeader(http.StatusCreated)
+			w.Write(jsonToMessage("Parent post was created in another thread"))
+			return
+		}
 	}
 
 	var postsCreated []models.Post
@@ -139,4 +150,68 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.Write([]byte("[]"))
 	}
+}
+
+func PostDetails(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	w.Header().Set("Content-Type", "application/json")
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/post/")
+	idString := strings.TrimSuffix(RequestUrl, "/details")
+
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if r.Method == "GET" {
+		var postFull models.PostFull
+		post, err := SelectPostByID(id)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		postFull.Post = &post
+
+		body, err := json.Marshal(postFull)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+		return
+	}
+
+	post, err := SelectPostByID(id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	var postUpdate models.PostUpdate
+	err = json.NewDecoder(r.Body).Decode(&postUpdate)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	post, err = UpdatePost(post, postUpdate)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	body, err := json.Marshal(post)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }

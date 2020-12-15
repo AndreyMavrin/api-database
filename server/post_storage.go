@@ -9,8 +9,14 @@ func InsertPost(post models.Post) (models.Post, error) {
 	row := models.DB.QueryRow(`INSERT INTO posts(author, created, forum, message, parent, thread) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
 		post.Author, post.Created, post.Forum, post.Message, post.Parent, post.Thread)
 	var p models.Post
-	err := row.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.Message, &p.Parent, &p.Thread, &p.Path)
+	err := row.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
 	return p, err
+}
+
+func CheckThreadByPost(post models.Post) bool {
+	var count int
+	models.DB.QueryRow(`SELECT COUNT(*) FROM posts WHERE thread = $1;`, post.Thread).Scan(&count)
+	return count > 0
 }
 
 func SelectPosts(author string, limit, since int, sort string, desc bool) ([]models.Post, error) {
@@ -93,4 +99,23 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 		posts = append(posts, p)
 	}
 	return posts, nil
+}
+
+func SelectPostByID(id int) (models.Post, error) {
+	var post models.Post
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, is_edited, message, parent, thread FROM posts WHERE id = $1;`, id)
+	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread)
+	if err != nil {
+		return post, err
+	}
+	return post, nil
+}
+
+func UpdatePost(post models.Post, postUpdate models.PostUpdate) (models.Post, error) {
+	row := models.DB.QueryRow(`UPDATE posts SET message=$1, is_edited=true WHERE message=$2 RETURNING *;`, postUpdate.Message, post.Message)
+	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread, &post.Path)
+	if err != nil {
+		return post, err
+	}
+	return post, nil
 }

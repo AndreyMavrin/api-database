@@ -32,6 +32,7 @@ CREATE TABLE "posts" (
   "created" timestamp DEFAULT now(),
   "forum" varchar NOT NULL,
   "id" BIGSERIAL PRIMARY KEY,
+  "is_edited" BOOL DEFAULT false,
   "message" varchar NOT NULL,
   "parent" BIGINT DEFAULT 0,
   "thread" int,

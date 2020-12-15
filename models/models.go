@@ -59,6 +59,10 @@ type Post struct {
 	Path     pgtype.Int8Array `json:"-"`
 }
 
+type PostUpdate struct {
+	Message string `json:"message"`
+}
+
 type JsonNullInt64 struct {
 	sql.NullInt64
 }
@@ -89,6 +93,13 @@ type Vote struct {
 	Nickname string `json:"nickname"`
 	Voice    int    `json:"voice"`
 	Thread   int    `json:"-"`
+}
+
+type PostFull struct {
+	Author *User   `json:"author"`
+	Forum  *Forum  `json:"forum"`
+	Post   *Post   `json:"post"`
+	Thread *Thread `json:"thread"`
 }
 
 type Error struct {
