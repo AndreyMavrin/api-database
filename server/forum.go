@@ -107,10 +107,7 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 		limit = 0
 	}
 
-	since, err := strconv.Atoi(r.URL.Query().Get("since"))
-	if err != nil {
-		since = 0
-	}
+	since := r.URL.Query().Get("since")
 
 	desc, err := strconv.ParseBool(r.URL.Query().Get("desc"))
 	if err != nil {
@@ -136,8 +133,11 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(body)
-
+	if len(users) != 0 {
+		w.Write(body)
+	} else {
+		w.Write([]byte("[]"))
+	}
 }
 
 func CreateForumSlug(w http.ResponseWriter, r *http.Request) {

@@ -72,7 +72,7 @@ func UpdateUser(user models.User, userUpdate models.UserUpdate) error {
 	return nil
 }
 
-func SelectUsersByForum(slug string, since, limit int, desc bool) ([]models.User, error) {
+func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User, error) {
 	var users []models.User
 	var usernames []string
 	var rows *sql.Rows
@@ -92,21 +92,21 @@ func SelectUsersByForum(slug string, since, limit int, desc bool) ([]models.User
 		usernames = append(usernames, u)
 	}
 
-	if since == 0 {
+	if since == "" {
 		if desc {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY nickname DESC LIMIT $2;`, pq.Array(usernames), limit)
+			ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $2;`, pq.Array(usernames), limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) LIMIT $2;`, pq.Array(usernames), limit)
+			ORDER BY LOWER(nickname) COLLATE "C" LIMIT $2;`, pq.Array(usernames), limit)
 		}
 	} else {
 		if desc {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY nickname DESC LIMIT $2;`, pq.Array(usernames), limit)
+			AND LOWER(nickname) < LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $3;`, pq.Array(usernames), since, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY nickname LIMIT $2;`, pq.Array(usernames), limit)
+			AND LOWER(nickname) > LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" LIMIT $3;`, pq.Array(usernames), since, limit)
 		}
 	}
 
