@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"park_2020/api-database/models"
@@ -22,6 +21,13 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
+
+		if !CheckThread(slug) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post thread by slug"))
+			return
+		}
+
 		thread, err = SelectThread(slug)
 		if err != nil {
 			log.Println(err)
@@ -29,6 +35,12 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
+		if !CheckThreadByID(id) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post thread by id"))
+			return
+		}
+
 		thread, err = SelectThreadByID(id)
 		if err != nil {
 			log.Println(err)
@@ -47,10 +59,15 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, post := range posts {
+		if !CheckUserByNickname(post.Author) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post author by nickname"))
+			return
+		}
+
 		post.Thread = thread.ID
-		fmt.Println(post.Thread)
 		if post.Parent.Int64 != 0 && !CheckThreadByPost(post) {
-			w.WriteHeader(http.StatusCreated)
+			w.WriteHeader(http.StatusConflict)
 			w.Write(jsonToMessage("Parent post was created in another thread"))
 			return
 		}
@@ -114,7 +131,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 		slug := slugOrID
 		if !CheckThread(slug) {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread"))
+			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
 
@@ -125,6 +142,12 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
+		if !CheckThreadByID(id) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by id"))
+			return
+		}
+
 		thread, err = SelectThreadByID(id)
 		if err != nil {
 			log.Println(err)
@@ -155,7 +178,6 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 func PostDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/post/")
 	idString := strings.TrimSuffix(RequestUrl, "/details")
@@ -166,12 +188,47 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !CheckPostByID(id) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find post by id"))
+		return
+	}
+
+	related := r.URL.Query().Get("related")
+
 	if r.Method == "GET" {
 		var postFull models.PostFull
 		post, err := SelectPostByID(id)
 		if err != nil {
 			log.Println(err)
 			return
+		}
+
+		if strings.Contains(related, "user") {
+			user, err := SelectUserByPost(id)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			postFull.Author = &user
+		}
+
+		if strings.Contains(related, "forum") {
+			forum, err := SelectForumByPost(id)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			postFull.Forum = &forum
+		}
+
+		if strings.Contains(related, "thread") {
+			thread, err := SelectThreadByPost(id)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			postFull.Thread = &thread
 		}
 
 		postFull.Post = &post

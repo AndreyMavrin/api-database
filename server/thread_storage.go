@@ -25,6 +25,12 @@ func CheckThread(slug string) bool {
 	return count > 0
 }
 
+func CheckThreadByID(id int) bool {
+	var count int
+	models.DB.QueryRow(`SELECT COUNT(id) FROM threads WHERE id = $1;`, id).Scan(&count)
+	return count > 0
+}
+
 func SelectThread(slug string) (models.Thread, error) {
 	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug ILIKE $1;`, slug)
 	var th models.Thread
@@ -76,6 +82,22 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 		threads = append(threads, th)
 	}
 	return threads, nil
+}
+
+func SelectThreadByPost(id int) (models.Thread, error) {
+	var thread models.Thread
+	row := models.DB.QueryRow(`SELECT thread FROM posts WHERE id = $1;`, id)
+	err := row.Scan(&thread.ID)
+	if err != nil {
+		return thread, err
+	}
+
+	thread, err = SelectThreadByID(thread.ID)
+	if err != nil {
+		return thread, err
+	}
+
+	return thread, nil
 }
 
 func UpdateThread(thread models.Thread, threadUpdate models.ThreadUpdate) error {

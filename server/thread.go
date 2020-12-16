@@ -78,6 +78,11 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
+		if !CheckThread(slug) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by slug"))
+			return
+		}
 
 		thread, err = SelectThread(slug)
 		if err != nil {
@@ -86,6 +91,12 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
+		if !CheckThreadByID(id) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by id"))
+			return
+		}
+
 		thread, err = SelectThreadByID(id)
 		if err != nil {
 			log.Println(err)
@@ -180,6 +191,12 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 			}
 
 		} else {
+			if !CheckThreadByID(id) {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write(jsonToMessage("Can't find thread by id"))
+				return
+			}
+
 			var err error
 			thread, err = SelectThreadByID(id)
 			if err != nil {
@@ -217,6 +234,12 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
+		if !CheckThreadByID(id) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by id"))
+			return
+		}
+
 		var err error
 		thread, err = SelectThreadByID(id)
 		if err != nil {

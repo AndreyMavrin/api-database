@@ -146,3 +146,21 @@ func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User
 
 	return users, nil
 }
+
+func SelectUserByPost(id int) (models.User, error) {
+	var user models.User
+	row := models.DB.QueryRow(`SELECT author FROM posts WHERE id = $1;`, id)
+	var author string
+	err := row.Scan(&author)
+	if err != nil {
+		return user, err
+	}
+
+	row = models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname ILIKE $1;`, author)
+	err = row.Scan(&user.About, &user.Email, &user.Fullname, &user.Nickname)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
+}

@@ -101,6 +101,12 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 	return posts, nil
 }
 
+func CheckPostByID(id int) bool {
+	var count int
+	models.DB.QueryRow(`SELECT COUNT(id) FROM posts WHERE id = $1;`, id).Scan(&count)
+	return count > 0
+}
+
 func SelectPostByID(id int) (models.Post, error) {
 	var post models.Post
 	row := models.DB.QueryRow(`SELECT author, created, forum, id, is_edited, message, parent, thread FROM posts WHERE id = $1;`, id)
@@ -112,10 +118,12 @@ func SelectPostByID(id int) (models.Post, error) {
 }
 
 func UpdatePost(post models.Post, postUpdate models.PostUpdate) (models.Post, error) {
-	row := models.DB.QueryRow(`UPDATE posts SET message=$1, is_edited=true WHERE message=$2 RETURNING *;`, postUpdate.Message, post.Message)
-	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread, &post.Path)
-	if err != nil {
-		return post, err
+	if postUpdate.Message != "" && postUpdate.Message != post.Message {
+		row := models.DB.QueryRow(`UPDATE posts SET message=$1, is_edited=true WHERE message=$2 RETURNING *;`, postUpdate.Message, post.Message)
+		err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread, &post.Path)
+		if err != nil {
+			return post, err
+		}
 	}
 	return post, nil
 }

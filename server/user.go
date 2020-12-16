@@ -17,10 +17,6 @@ func jsonToMessage(message string) []byte {
 	return jsonError
 }
 
-func HealthHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
-
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
