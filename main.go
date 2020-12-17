@@ -14,19 +14,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var conf models.Config
-
-func init() {
-	models.LoadConfig(&conf)
-}
-
-func DBConnection(conf *models.Config) *sql.DB {
-	connString := fmt.Sprintf("host=%v user=%v password=%v dbname=%v sslmode=disable",
-		conf.SQLDataBase.Server,
-		conf.SQLDataBase.UserID,
-		conf.SQLDataBase.Password,
-		conf.SQLDataBase.Database,
-	)
+func DBConnection() *sql.DB {
+	connString := "host=localhost user=amavrin password=root dbname=forums sslmode=disable"
 
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
@@ -44,7 +33,7 @@ func DBConnection(conf *models.Config) *sql.DB {
 }
 
 func main() {
-	models.DB = DBConnection(&conf)
+	models.DB = DBConnection()
 	router := mux.NewRouter()
 	router.HandleFunc("/health", server.HealthHandler)
 	router.HandleFunc("/api/user/{nickname}/create", server.CreateUser).Methods(http.MethodPost)
