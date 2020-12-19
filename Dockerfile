@@ -47,4 +47,6 @@ COPY --from=build /app /app
 EXPOSE 5432
 EXPOSE 5000
 
+ENV PGPASSWORD root
+
 CMD service postgresql start && psql -h localhost -d forums -U amavrin -p 5432 -a -q -f /app/storage/migrations/up.sql && /app/api-server 
