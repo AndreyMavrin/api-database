@@ -90,70 +90,60 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	} else {
-		if !CheckThreadByID(id) {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread by id"))
-			return
-		}
-
-		thread, err = SelectThreadByID(id)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}
-
-	vote.Thread = thread.ID
-
-	if !CheckVote(vote.Nickname) {
+		vote.Thread = thread.ID
 		err = InsertVote(vote)
 		if err != nil {
-			log.Println(err)
-			return
+			err = UpdateVote(vote)
+			if err != nil {
+				log.Println(err)
+				return
+			}
 		}
-		thread.Votes += vote.Voice
-	} else {
-		lastVote, err := LastVote(vote.Nickname)
+
+		threadUpdate, err := SelectThread(thread.Slug)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
+		if threadUpdate.Votes < 0 {
+			threadUpdate.Votes *= -1
+		}
+
+		body, err := json.Marshal(threadUpdate)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+		return
+	}
+
+	if !CheckThreadByID(id) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by id"))
+		return
+	}
+
+	vote.Thread = id
+	err = InsertVote(vote)
+	if err != nil {
 		err = UpdateVote(vote)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-
-		vote, err := SelectVote(vote.Nickname)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		if lastVote != vote.Voice {
-			if vote.Voice == 1 {
-				thread.Votes += 2
-			} else {
-				thread.Votes -= 2
-			}
-		}
 	}
 
-	err = AddVoiceToThread(thread, thread.Votes)
+	threadUpdate, err := SelectThreadByID(id)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	thread, err = SelectThread(thread.Slug)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	body, err := json.Marshal(thread)
+	body, err := json.Marshal(threadUpdate)
 	if err != nil {
 		log.Println(err)
 		return

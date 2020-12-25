@@ -1,11 +1,11 @@
-CREATE TABLE "users" (
+CREATE UNLOGGED TABLE "users" (
   "about" varchar NOT NULL,
   "email" varchar NOT NULL,
   "fullname" varchar NOT NULL,
   "nickname" varchar PRIMARY KEY
 );
 
-CREATE TABLE "forums" (
+CREATE UNLOGGED TABLE "forums" (
   "username" varchar NOT null,
   "posts" BIGINT DEFAULT 0,
   "threads" int DEFAULT 0,
@@ -14,7 +14,7 @@ CREATE TABLE "forums" (
   FOREIGN KEY ("username") REFERENCES "users" (nickname)
 );
 
-CREATE TABLE "threads" (
+CREATE UNLOGGED TABLE "threads" (
   "author" varchar NOT NULL,
   "created" timestamptz DEFAULT now(),
   "forum" varchar NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE "threads" (
   FOREIGN KEY (forum) REFERENCES "forums" (slug)
 );
 
-CREATE TABLE "posts" (
+CREATE UNLOGGED TABLE "posts" (
   "author" varchar NOT NULL,
   "created" timestamp DEFAULT now(),
   "forum" varchar NOT NULL,
@@ -44,13 +44,14 @@ CREATE TABLE "posts" (
   FOREIGN KEY (parent) REFERENCES "posts" (id)
 );
 
-CREATE TABLE "votes" (
+CREATE UNLOGGED TABLE "votes" (
   "nickname" varchar NOT NULL,
   "voice" int,
   "thread" int,
   
    FOREIGN KEY (nickname) REFERENCES "users" (nickname),
-   FOREIGN KEY (thread) REFERENCES "threads" (id)
+   FOREIGN KEY (thread) REFERENCES "threads" (id),
+   UNIQUE (nickname, thread)
 );
 
 CREATE OR REPLACE FUNCTION update_threads_count() RETURNS TRIGGER AS
