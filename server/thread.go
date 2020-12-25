@@ -175,6 +175,7 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		var thread models.Thread
 
 		id, errInt := strconv.Atoi(slugOrID)
+		var err error
 		if errInt != nil {
 			slug := slugOrID
 			if !CheckThread(slug) {
@@ -183,7 +184,6 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			var err error
 			thread, err = SelectThread(slug)
 			if err != nil {
 				log.Println(err)
@@ -197,7 +197,6 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			var err error
 			thread, err = SelectThreadByID(id)
 			if err != nil {
 				log.Println(err)
@@ -218,6 +217,7 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 
 	var thread models.Thread
 	id, errInt := strconv.Atoi(slugOrID)
+	var err error
 	if errInt != nil {
 		slug := slugOrID
 		if !CheckThread(slug) {
@@ -226,7 +226,6 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var err error
 		thread, err = SelectThread(slug)
 		if err != nil {
 			log.Println(err)
@@ -240,7 +239,6 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var err error
 		thread, err = SelectThreadByID(id)
 		if err != nil {
 			log.Println(err)
@@ -249,7 +247,7 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var threadUpdate models.ThreadUpdate
-	err := json.NewDecoder(r.Body).Decode(&threadUpdate)
+	err = json.NewDecoder(r.Body).Decode(&threadUpdate)
 	if err != nil {
 		log.Println(err)
 		return
