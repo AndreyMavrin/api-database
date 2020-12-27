@@ -16,7 +16,7 @@ RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
 
 # install Postgres
-ENV PGVER 12
+ENV PGVER 13
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && apt-get install -y postgresql postgresql-contrib
 
