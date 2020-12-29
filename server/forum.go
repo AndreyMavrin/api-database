@@ -64,7 +64,7 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 	forum.User = user.Nickname
 
 	if CheckForum(forum.Slug) {
-		forum, err := SelectForum(forum.Slug)
+		forum, err = SelectForum(forum.Slug)
 		if err != nil {
 			log.Println(err)
 			return

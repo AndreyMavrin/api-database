@@ -46,7 +46,6 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
-
 	}
 
 	var posts []models.Post

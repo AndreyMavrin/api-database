@@ -71,13 +71,13 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/user/")
 	nickname := strings.TrimSuffix(RequestUrl, "/profile")
 
-	if r.Method == "GET" {
-		if !CheckUserByNickname(nickname) {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find user"))
-			return
-		}
+	if !CheckUserByNickname(nickname) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find user"))
+		return
+	}
 
+	if r.Method == "GET" {
 		user, err := SelectUserByNickname(nickname)
 		if err != nil {
 			log.Println(err)
@@ -99,12 +99,6 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&userUpdate)
 	if err != nil {
 		log.Println(err)
-		return
-	}
-
-	if !CheckUserByNickname(nickname) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find user"))
 		return
 	}
 
@@ -141,5 +135,4 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 	return
-
 }
