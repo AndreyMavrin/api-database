@@ -49,7 +49,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = InsertUser(user)
+	user, err = InsertUser(user)
 	if err != nil {
 		log.Println(err)
 		return

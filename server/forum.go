@@ -81,7 +81,7 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = InsertForum(forum)
+	forum, err = InsertForum(forum)
 	if err != nil {
 		log.Println(err)
 		return

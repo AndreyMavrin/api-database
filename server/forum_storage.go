@@ -4,10 +4,12 @@ import (
 	"park_2020/api-database/models"
 )
 
-func InsertForum(forum models.Forum) error {
-	_, err := models.DB.Exec(`INSERT INTO forums(slug, title, username) VALUES ($1, $2, $3);`,
+func InsertForum(forum models.Forum) (models.Forum, error) {
+	row := models.DB.QueryRow(`INSERT INTO forums(slug, title, username) VALUES ($1, $2, $3) RETURNING *;`,
 		forum.Slug, forum.Title, forum.User)
-	return err
+	var f models.Forum
+	err := row.Scan(&f.User, &f.Posts, &f.Threads, &f.Slug, &f.Title)
+	return f, err
 }
 
 func CheckForum(slug string) bool {
