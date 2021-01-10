@@ -13,12 +13,6 @@ func InsertThread(thread models.Thread) (models.Thread, error) {
 	return th, err
 }
 
-func CheckThreadByForum(slug string) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM forums WHERE slug ILIKE $1;`, slug).Scan(&count)
-	return count > 0
-}
-
 func CheckThread(slug string) bool {
 	var count int
 	models.DB.QueryRow(`SELECT COUNT(id) FROM threads WHERE slug ILIKE $1;`, slug).Scan(&count)

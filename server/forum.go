@@ -49,15 +49,10 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !CheckUserByNickname(forum.User) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find user"))
-		return
-	}
-
 	user, err := SelectUserByNickname(forum.User)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find user"))
 		return
 	}
 
@@ -152,7 +147,8 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := SelectUsersByForum(slug, since, limit, desc)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find forum"))
 		return
 	}
 
@@ -183,20 +179,6 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !CheckUserByNickname(thread.Author) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread author"))
-		return
-	}
-
-	if !CheckThreadByForum(slug) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread forum"))
-		return
-	}
-
-	thread.Forum = slug
-
 	if CheckThread(thread.Slug) && thread.Slug != "" {
 		thread, err := SelectThread(thread.Slug)
 		if err != nil {
@@ -215,34 +197,18 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if CheckThreadByForum(slug) {
-		forum, err := SelectForum(slug)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		thread.Forum = forum.Slug
-		thread, err = InsertThread(thread)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		body, err := json.Marshal(thread)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		w.Write(body)
+	forum, err := SelectForum(slug)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread forum"))
 		return
 	}
 
+	thread.Forum = forum.Slug
 	thread, err = InsertThread(thread)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread author"))
 		return
 	}
 
