@@ -22,28 +22,18 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 	if errInt != nil {
 		slug := slugOrID
 
-		if !CheckThread(slug) {
+		thread, err = SelectThread(slug)
+		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find post thread by slug"))
 			return
 		}
 
-		thread, err = SelectThread(slug)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
 	} else {
-		if !CheckThreadByID(id) {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find post thread by id"))
-			return
-		}
-
 		thread, err = SelectThreadByID(id)
 		if err != nil {
-			log.Println(err)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post thread by id"))
 			return
 		}
 	}
@@ -57,34 +47,26 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, post := range posts {
-		if !CheckUserByNickname(post.Author) {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find post author by nickname"))
-			return
-		}
-
-		post.Thread = thread.ID
-		if post.Parent.Int64 != 0 && !CheckThreadByPost(post) {
-			w.WriteHeader(http.StatusConflict)
-			w.Write(jsonToMessage("Parent post was created in another thread"))
-			return
-		}
+	if len(posts) > 0 && !CheckUserByNickname(posts[0].Author) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find post author by nickname"))
+		return
 	}
 
 	var postsCreated []models.Post
 	for _, post := range posts {
+
 		post.Thread = thread.ID
 		post.Forum = thread.Forum
 
 		post, err = InsertPost(post)
 		if err != nil {
-			log.Println(err)
+			w.WriteHeader(http.StatusConflict)
+			w.Write(jsonToMessage("Parent post was created in another thread"))
 			return
 		}
 
 		postsCreated = append(postsCreated, post)
-
 	}
 
 	body, err := json.Marshal(postsCreated)
@@ -128,28 +110,19 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
-		if !CheckThread(slug) {
+
+		thread, err = SelectThread(slug)
+		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
 
-		thread, err = SelectThread(slug)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
 	} else {
-		if !CheckThreadByID(id) {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread by id"))
-			return
-		}
-
 		thread, err = SelectThreadByID(id)
 		if err != nil {
-			log.Println(err)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by id"))
 			return
 		}
 	}

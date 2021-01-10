@@ -13,12 +13,6 @@ func InsertPost(post models.Post) (models.Post, error) {
 	return p, err
 }
 
-func CheckThreadByPost(post models.Post) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM posts WHERE thread = $1;`, post.Thread).Scan(&count)
-	return count > 0
-}
-
 func SelectPosts(author string, limit, since int, sort string, desc bool) ([]models.Post, error) {
 	var posts []models.Post
 	var rows *sql.Rows
