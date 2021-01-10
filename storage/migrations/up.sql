@@ -1,6 +1,6 @@
 CREATE UNLOGGED TABLE "users" (
   "about" varchar NOT NULL,
-  "email" varchar UNIQUE,
+  "email" varchar NOT NULL,
   "fullname" varchar NOT NULL,
   "nickname" varchar PRIMARY KEY
 );
@@ -10,7 +10,8 @@ CREATE UNLOGGED TABLE "forums" (
   "posts" BIGINT DEFAULT 0,
   "threads" int DEFAULT 0,
   "slug" varchar PRIMARY KEY,
-  "title" varchar NOT NULL
+  "title" varchar NOT NULL,
+  FOREIGN KEY ("username") REFERENCES "users" (nickname)
 );
 
 CREATE UNLOGGED TABLE "threads" (
@@ -21,7 +22,9 @@ CREATE UNLOGGED TABLE "threads" (
   "message" varchar NOT NULL,
   "slug" varchar NOT NULL,
   "title" varchar NOT NULL,
-  "votes" int DEFAULT 0
+  "votes" int DEFAULT 0,
+  FOREIGN KEY (author) REFERENCES "users" (nickname),
+  FOREIGN KEY (forum) REFERENCES "forums" (slug)
 );
 
 CREATE UNLOGGED TABLE "posts" (
@@ -35,6 +38,9 @@ CREATE UNLOGGED TABLE "posts" (
   "thread" int,
   "path" BIGINT[] DEFAULT ARRAY []::INTEGER[],
   
+  FOREIGN KEY (author) REFERENCES "users" (nickname),
+  FOREIGN KEY (forum) REFERENCES "forums" (slug),
+  FOREIGN KEY (thread) REFERENCES "threads" (id),
   FOREIGN KEY (parent) REFERENCES "posts" (id)
 );
 
@@ -42,6 +48,9 @@ CREATE UNLOGGED TABLE "votes" (
   "nickname" varchar NOT NULL,
   "voice" int,
   "thread" int,
+  
+   FOREIGN KEY (nickname) REFERENCES "users" (nickname),
+   FOREIGN KEY (thread) REFERENCES "threads" (id),
    UNIQUE (nickname, thread)
 );
 
