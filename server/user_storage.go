@@ -7,10 +7,12 @@ import (
 	"github.com/lib/pq"
 )
 
-func InsertUser(user models.User) error {
-	_, err := models.DB.Exec(`INSERT INTO users(about, email, fullname, nickname) VALUES ($1, $2, $3, $4);`,
+func InsertUser(user models.User) (models.User, error) {
+	row := models.DB.QueryRow(`INSERT INTO users(about, email, fullname, nickname) VALUES ($1, $2, $3, $4) RETURNING *;`,
 		user.About, user.Email, user.Fullname, user.Nickname)
-	return err
+	var u models.User
+	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
+	return u, err
 }
 
 func CheckUserByEmail(email string) bool {
