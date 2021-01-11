@@ -13,7 +13,7 @@ func InsertPost(post models.Post) (models.Post, error) {
 	return p, err
 }
 
-func SelectPosts(author string, limit, since int, sort string, desc bool) ([]models.Post, error) {
+func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]models.Post, error) {
 	var posts []models.Post
 	var rows *sql.Rows
 	var err error
@@ -21,59 +21,51 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 	if since == 0 {
 		if sort == "flat" || sort == "" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-		WHERE author ILIKE $1 ORDER BY created DESC, id DESC LIMIT $2;`, author, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created DESC, id DESC LIMIT $2;`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-		WHERE author ILIKE $1 ORDER BY created ASC, id LIMIT $2;`, author, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created ASC, id LIMIT $2;`, threadID, limit)
 			}
 		} else if sort == "tree" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-		WHERE author ILIKE $1 ORDER BY path DESC, id  DESC LIMIT $2;`, author, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path DESC, id  DESC LIMIT $2;`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-		WHERE author ILIKE $1 ORDER BY path, id LIMIT $2;`, author, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path, id LIMIT $2;`, threadID, limit)
 			}
 		} else {
 			if desc {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id DESC LIMIT $2)
-			ORDER BY path[1] DESC, path, id;`, author, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN
+				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id DESC LIMIT $2)
+				ORDER BY path[1] DESC, path, id;`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL ORDER BY id LIMIT $2)
-			ORDER BY path, id;`, author, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN
+				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id LIMIT $2)
+				ORDER BY path, id;`, threadID, limit)
 			}
 		}
 	} else {
 		if sort == "flat" || sort == "" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE author ILIKE $1 AND id < $2 ORDER BY created DESC, id DESC LIMIT $3;`, author, since, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND id < $2
+				ORDER BY created DESC, id DESC LIMIT $3;`, threadID, since, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE author ILIKE $1 AND id > $2 ORDER BY created ASC, id LIMIT $3;`, author, since, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND id > $2
+				ORDER BY created ASC, id LIMIT $3;`, threadID, since, limit)
 			}
 		} else if sort == "tree" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE author ILIKE $1 AND PATH < (SELECT path FROM posts WHERE id = $2)
-			ORDER BY path DESC, id  DESC LIMIT $3;`, author, since, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND PATH < (SELECT path FROM posts WHERE id = $2)
+				ORDER BY path DESC, id  DESC LIMIT $3;`, threadID, since, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-			WHERE author ILIKE $1 AND PATH > (SELECT path FROM posts WHERE id = $2)
-			ORDER BY path, id LIMIT $3;`, author, since, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND PATH > (SELECT path FROM posts WHERE id = $2)
+				ORDER BY path, id LIMIT $3;`, threadID, since, limit)
 			}
 		} else {
 			if desc {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-				WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL AND PATH[1] <
-				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path, id;`, author, since, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread=$1 AND parent IS NULL AND PATH[1] <
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path, id;`, threadID, since, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT author, created, forum, id, message, parent, thread FROM posts
-				WHERE path[1] IN (SELECT id FROM posts WHERE author = $1 AND parent IS NULL AND PATH[1] >
-				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT $3) ORDER BY path, id;`, author, since, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread=$1 AND parent IS NULL AND PATH[1] >
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT $3) ORDER BY path, id;`, threadID, since, limit)
 			}
 		}
 	}
@@ -85,7 +77,7 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 
 	for rows.Next() {
 		var p models.Post
-		err = rows.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.Message, &p.Parent, &p.Thread)
+		err = rows.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
 		if err != nil {
 			return posts, err
 		}
@@ -93,12 +85,6 @@ func SelectPosts(author string, limit, since int, sort string, desc bool) ([]mod
 		posts = append(posts, p)
 	}
 	return posts, nil
-}
-
-func CheckPostByID(id int) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM posts WHERE id = $1;`, id).Scan(&count)
-	return count > 0
 }
 
 func SelectPostByID(id int) (models.Post, error) {

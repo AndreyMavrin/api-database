@@ -24,22 +24,22 @@ type UserUpdate struct {
 }
 
 type Forum struct {
-	Posts   int    `json:"posts"`
+	Posts   int64  `json:"posts"`
 	Slug    string `json:"slug"`
-	Threads int    `json:"threads"`
+	Threads int32  `json:"threads"`
 	Title   string `json:"title"`
 	User    string `json:"user"`
 }
 
 type Thread struct {
-	Author  string    `json:"author"`
-	Created time.Time `json:"created"`
-	Forum   string    `json:"forum"`
-	ID      int       `json:"id"`
-	Message string    `json:"message"`
-	Slug    string    `json:"slug"`
-	Title   string    `json:"title"`
-	Votes   int       `json:"votes"`
+	Author  string         `json:"author"`
+	Created time.Time      `json:"created"`
+	Forum   string         `json:"forum"`
+	ID      int32          `json:"id"`
+	Message string         `json:"message"`
+	Slug    JsonNullString `json:"slug"`
+	Title   string         `json:"title"`
+	Votes   int32          `json:"votes"`
 }
 
 type ThreadUpdate struct {
@@ -51,11 +51,11 @@ type Post struct {
 	Author   string           `json:"author"`
 	Created  time.Time        `json:"created"`
 	Forum    string           `json:"forum"`
-	ID       int              `json:"id"`
+	ID       int64            `json:"id"`
 	IsEdited bool             `json:"isEdited"`
 	Message  string           `json:"message"`
 	Parent   JsonNullInt64    `json:"parent"`
-	Thread   int              `json:"thread,"`
+	Thread   int32            `json:"thread,"`
 	Path     pgtype.Int8Array `json:"-"`
 }
 
@@ -89,10 +89,36 @@ func (v *JsonNullInt64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type JsonNullString struct {
+	sql.NullString
+}
+
+func (v JsonNullString) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.String)
+	} else {
+		return json.Marshal(nil)
+	}
+}
+
+func (v *JsonNullString) UnmarshalJSON(data []byte) error {
+	var x *string
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		v.Valid = true
+		v.String = *x
+	} else {
+		v.Valid = false
+	}
+	return nil
+}
+
 type Vote struct {
 	Nickname string `json:"nickname"`
-	Voice    int    `json:"voice"`
-	Thread   int    `json:"-"`
+	Voice    int32  `json:"voice"`
+	Thread   int64  `json:"-"`
 }
 
 type PostFull struct {

@@ -32,7 +32,7 @@ func SelectThread(slug string) (models.Thread, error) {
 	return th, err
 }
 
-func SelectThreadByID(id int) (models.Thread, error) {
+func SelectThreadByID(id int32) (models.Thread, error) {
 	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE id = $1;`, id)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)

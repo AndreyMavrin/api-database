@@ -30,7 +30,7 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		thread, err = SelectThreadByID(id)
+		thread, err = SelectThreadByID(int32(id))
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find post thread by id"))
@@ -47,12 +47,6 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(posts) > 0 && !CheckUserByNickname(posts[0].Author) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find post author by nickname"))
-		return
-	}
-
 	var postsCreated []models.Post
 	for _, post := range posts {
 
@@ -61,6 +55,11 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 
 		post, err = InsertPost(post)
 		if err != nil {
+			if !CheckUserByNickname(posts[0].Author) {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write(jsonToMessage("Can't find post author by nickname"))
+				return
+			}
 			w.WriteHeader(http.StatusConflict)
 			w.Write(jsonToMessage("Parent post was created in another thread"))
 			return
@@ -119,7 +118,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		thread, err = SelectThreadByID(id)
+		thread, err = SelectThreadByID(int32(id))
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
@@ -127,7 +126,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	posts, err := SelectPosts(thread.Author, limit, since, sort, desc)
+	posts, err := SelectPosts(int(thread.ID), limit, since, sort, desc)
 	if err != nil {
 		log.Println(err)
 		return
@@ -160,19 +159,14 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !CheckPostByID(id) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find post by id"))
-		return
-	}
-
 	related := r.URL.Query().Get("related")
 
 	if r.Method == "GET" {
 		var postFull models.PostFull
 		post, err := SelectPostByID(id)
 		if err != nil {
-			log.Println(err)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post by id"))
 			return
 		}
 
@@ -218,7 +212,8 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 
 	post, err := SelectPostByID(id)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find post by id"))
 		return
 	}
 
