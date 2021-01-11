@@ -19,12 +19,6 @@ func CheckThread(slug string) bool {
 	return count > 0
 }
 
-func CheckThreadByID(id int) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM threads WHERE id = $1;`, id).Scan(&count)
-	return count > 0
-}
-
 func SelectThread(slug string) (models.Thread, error) {
 	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug ILIKE $1;`, slug)
 	var th models.Thread
@@ -94,20 +88,13 @@ func SelectThreadByPost(id int) (models.Thread, error) {
 	return thread, nil
 }
 
-func UpdateThread(thread models.Thread, threadUpdate models.ThreadUpdate) error {
-	if threadUpdate.Message != "" {
-		_, err := models.DB.Exec(`UPDATE threads SET message=$1 WHERE message=$2;`, threadUpdate.Message, thread.Message)
-		if err != nil {
-			return err
-		}
-	}
-	if threadUpdate.Title != "" {
-		_, err := models.DB.Exec(`UPDATE threads SET title=$1 WHERE title=$2;`, threadUpdate.Title, thread.Title)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func UpdateThread(thread models.Thread) (models.Thread, error) {
+	row := models.DB.QueryRow(`UPDATE threads SET message=COALESCE(NULLIF($1, ''), message),
+		title=COALESCE(NULLIF($2, ''), title) WHERE id = $3 RETURNING *;`, thread.Message, thread.Title, thread.ID)
+
+	var th models.Thread
+	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
+	return th, err
 }
 
 func InsertVote(vote models.Vote) error {

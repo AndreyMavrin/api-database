@@ -201,33 +201,23 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		if !CheckThreadByID(id) {
+		thread, err = SelectThreadByID(int32(id))
+		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
 			return
 		}
-
-		thread, err = SelectThreadByID(int32(id))
-		if err != nil {
-			log.Println(err)
-			return
-		}
 	}
 
-	var threadUpdate models.ThreadUpdate
+	var threadUpdate models.Thread
 	err = json.NewDecoder(r.Body).Decode(&threadUpdate)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	err = UpdateThread(thread, threadUpdate)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	thread, err = SelectThread(thread.Slug.String)
+	threadUpdate.ID = thread.ID
+	thread, err = UpdateThread(threadUpdate)
 	if err != nil {
 		log.Println(err)
 		return

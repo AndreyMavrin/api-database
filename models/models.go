@@ -17,12 +17,6 @@ type User struct {
 	Nickname string `json:"nickname"`
 }
 
-type UserUpdate struct {
-	About    string `json:"about"`
-	Email    string `json:"email"`
-	Fullname string `json:"fullname"`
-}
-
 type Forum struct {
 	Posts   int64  `json:"posts"`
 	Slug    string `json:"slug"`
@@ -40,11 +34,6 @@ type Thread struct {
 	Slug    JsonNullString `json:"slug"`
 	Title   string         `json:"title"`
 	Votes   int32          `json:"votes"`
-}
-
-type ThreadUpdate struct {
-	Message string `json:"message"`
-	Title   string `json:"title"`
 }
 
 type Post struct {
