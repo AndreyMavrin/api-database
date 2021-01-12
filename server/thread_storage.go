@@ -3,11 +3,19 @@ package server
 import (
 	"database/sql"
 	"park_2020/api-database/models"
+	"time"
 )
 
 func InsertThread(thread models.Thread) (models.Thread, error) {
-	row := models.DB.QueryRow(`INSERT INTO threads(author, created, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
-		thread.Author, thread.Created, thread.Forum, thread.Message, thread.Slug, thread.Title)
+	var row *sql.Row
+	timeCreated := time.Now()
+	if thread.Created == timeCreated {
+		row = models.DB.QueryRow(`INSERT INTO threads(author, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5) RETURNING *;`,
+			thread.Author, thread.Forum, thread.Message, thread.Slug, thread.Title)
+	} else {
+		row = models.DB.QueryRow(`INSERT INTO threads(author, created, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
+			thread.Author, thread.Created, thread.Forum, thread.Message, thread.Slug, thread.Title)
+	}
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
