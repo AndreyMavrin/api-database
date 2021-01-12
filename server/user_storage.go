@@ -52,26 +52,14 @@ func SelectUserByNickname(nickname string) (models.User, error) {
 	return u, err
 }
 
-func UpdateUser(user models.User, userUpdate models.UserUpdate) error {
-	if userUpdate.About != "" {
-		_, err := models.DB.Exec(`UPDATE users SET about=$1 WHERE about=$2;`, userUpdate.About, user.About)
-		if err != nil {
-			return err
-		}
-	}
-	if userUpdate.Email != "" {
-		_, err := models.DB.Exec(`UPDATE users SET email=$1 WHERE email=$2;`, userUpdate.Email, user.Email)
-		if err != nil {
-			return err
-		}
-	}
-	if userUpdate.Fullname != "" {
-		_, err := models.DB.Exec(`UPDATE users SET fullname=$1 WHERE fullname=$2;`, userUpdate.Fullname, user.Fullname)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func UpdateUser(user models.User) (models.User, error) {
+	row := models.DB.QueryRow(`UPDATE users SET about=COALESCE(NULLIF($1, ''), about),
+				email=COALESCE(NULLIF($2, ''), email), 	fullname=COALESCE(NULLIF($3, ''), fullname)
+				WHERE nickname ILIKE $4 RETURNING *;`, user.About, user.Email, user.Fullname, user.Nickname)
+
+	var u models.User
+	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
+	return u, err
 }
 
 func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User, error) {

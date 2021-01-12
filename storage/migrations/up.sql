@@ -16,11 +16,11 @@ CREATE UNLOGGED TABLE "forums" (
 
 CREATE UNLOGGED TABLE "threads" (
   "author" varchar NOT NULL,
-  "created" timestamptz DEFAULT now(),
+  "created" timestamp with time zone default now(),
   "forum" varchar NOT NULL,
   "id" SERIAL PRIMARY KEY,
   "message" varchar NOT NULL,
-  "slug" varchar NOT NULL,
+  "slug" varchar UNIQUE,
   "title" varchar NOT NULL,
   "votes" int DEFAULT 0,
   FOREIGN KEY (author) REFERENCES "users" (nickname),
@@ -29,10 +29,10 @@ CREATE UNLOGGED TABLE "threads" (
 
 CREATE UNLOGGED TABLE "posts" (
   "author" varchar NOT NULL,
-  "created" timestamp DEFAULT now(),
+  "created" timestamp with time zone default now(),
   "forum" varchar NOT NULL,
   "id" BIGSERIAL PRIMARY KEY,
-  "is_edited" BOOL DEFAULT false,
+  "is_edited" BOOLEAN DEFAULT false,
   "message" varchar NOT NULL,
   "parent" BIGINT DEFAULT 0,
   "thread" int,
@@ -127,6 +127,8 @@ EXECUTE PROCEDURE update_votes();
 
 CREATE INDEX post_thread_id_index ON posts (thread, id);
 CREATE INDEX post_path_id_index ON posts (id, (posts.path));
+CREATE INDEX post_author_index ON posts (lower(author));
+CREATE INDEX post_forum_index ON posts (lower(forum));
 
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 

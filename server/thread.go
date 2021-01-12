@@ -36,8 +36,7 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 
 	threads, err := SelectThreads(forum, since, limit, desc)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find forum"))
+		log.Println(err)
 		return
 	}
 
@@ -87,7 +86,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		vote.Thread = thread.ID
+		vote.Thread = int64(thread.ID)
 		err = InsertVote(vote)
 		if err != nil {
 			err = UpdateVote(vote)
@@ -97,7 +96,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		threadUpdate, err := SelectThread(thread.Slug)
+		threadUpdate, err := SelectThread(thread.Slug.String)
 		if err != nil {
 			log.Println(err)
 			return
@@ -118,7 +117,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vote.Thread = id
+	vote.Thread = int64(id)
 	err = InsertVote(vote)
 	if err != nil {
 		err = UpdateVote(vote)
@@ -128,7 +127,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	threadUpdate, err := SelectThreadByID(id)
+	threadUpdate, err := SelectThreadByID(int32(id))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find thread by id"))
@@ -169,7 +168,7 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 			}
 
 		} else {
-			thread, err = SelectThreadByID(id)
+			thread, err = SelectThreadByID(int32(id))
 			if err != nil {
 				w.WriteHeader(http.StatusNotFound)
 				w.Write(jsonToMessage("Can't find thread by id"))
@@ -202,33 +201,23 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		if !CheckThreadByID(id) {
+		thread, err = SelectThreadByID(int32(id))
+		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
 			return
 		}
-
-		thread, err = SelectThreadByID(id)
-		if err != nil {
-			log.Println(err)
-			return
-		}
 	}
 
-	var threadUpdate models.ThreadUpdate
+	var threadUpdate models.Thread
 	err = json.NewDecoder(r.Body).Decode(&threadUpdate)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	err = UpdateThread(thread, threadUpdate)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	thread, err = SelectThread(thread.Slug)
+	threadUpdate.ID = thread.ID
+	thread, err = UpdateThread(threadUpdate)
 	if err != nil {
 		log.Println(err)
 		return

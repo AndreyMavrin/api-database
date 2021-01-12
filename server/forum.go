@@ -98,15 +98,10 @@ func ForumDetails(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/forum/")
 	slug := strings.TrimSuffix(RequestUrl, "/details")
 
-	if !CheckForum(slug) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find forum"))
-		return
-	}
-
 	forum, err := SelectForum(slug)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find forum"))
 		return
 	}
 
@@ -147,8 +142,7 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := SelectUsersByForum(slug, since, limit, desc)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find forum"))
+		log.Println(err)
 		return
 	}
 
@@ -179,8 +173,8 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if CheckThread(thread.Slug) && thread.Slug != "" {
-		thread, err := SelectThread(thread.Slug)
+	if CheckThread(thread.Slug.String) && thread.Slug.String != "" {
+		thread, err := SelectThread(thread.Slug.String)
 		if err != nil {
 			log.Println(err)
 			return

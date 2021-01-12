@@ -71,16 +71,11 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/user/")
 	nickname := strings.TrimSuffix(RequestUrl, "/profile")
 
-	if !CheckUserByNickname(nickname) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find user"))
-		return
-	}
-
 	if r.Method == "GET" {
 		user, err := SelectUserByNickname(nickname)
 		if err != nil {
-			log.Println(err)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find user"))
 			return
 		}
 
@@ -95,7 +90,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userUpdate models.UserUpdate
+	var userUpdate models.User
 	err := json.NewDecoder(r.Body).Decode(&userUpdate)
 	if err != nil {
 		log.Println(err)
@@ -108,25 +103,15 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := SelectUserByNickname(nickname)
+	userUpdate.Nickname = nickname
+	user, err := UpdateUser(userUpdate)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find user"))
 		return
 	}
 
-	err = UpdateUser(user, userUpdate)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	userUpdated, err := SelectUserByNickname(nickname)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	body, err := json.Marshal(userUpdated)
+	body, err := json.Marshal(user)
 	if err != nil {
 		log.Println(err)
 		return
@@ -134,5 +119,4 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
-	return
 }
