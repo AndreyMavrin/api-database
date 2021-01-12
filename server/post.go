@@ -284,5 +284,4 @@ github.com/bozaro/tech-db-forum/tests.(*Perf).Run.func1(0xc02a765b78, 0xc00050a2
 	/var/jenkins_home/workspace/tech-db-forum/tests/perf.go:87 +0x8b
 created by github.com/bozaro/tech-db-forum/tests.(*Perf).Run
 	/var/jenkins_home/workspace/tech-db-forum/tests/perf.go:79 +0xeb
-
 */
