@@ -7,6 +7,7 @@ import (
 	"park_2020/api-database/models"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func CreatePosts(w http.ResponseWriter, r *http.Request) {
@@ -51,11 +52,14 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	timeCreated := time.Now()
+
 	var postsCreated []models.Post
 	for _, post := range posts {
 
 		post.Thread = thread.ID
 		post.Forum = thread.Forum
+		post.Created = timeCreated
 
 		post, err = InsertPost(post)
 		if err != nil {
