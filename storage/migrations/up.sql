@@ -127,9 +127,6 @@ EXECUTE PROCEDURE update_votes();
 
 CREATE INDEX post_thread_id_index ON posts (thread, id);
 CREATE INDEX post_path_id_index ON posts (id, (posts.path));
-CREATE INDEX post_author_index ON posts (lower(author));
-CREATE INDEX post_forum_index ON posts (lower(forum));
-
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
 CREATE INDEX users_nickname_lower_index ON users (lower(users.nickname));
