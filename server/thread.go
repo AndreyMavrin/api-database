@@ -40,6 +40,11 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(threads) == 0 {
+		w.Write([]byte("[]"))
+		return
+	}
+
 	body, err := json.Marshal(threads)
 	if err != nil {
 		log.Println(err)
@@ -47,11 +52,8 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if len(threads) != 0 {
-		w.Write(body)
-	} else {
-		w.Write([]byte("[]"))
-	}
+	w.Write(body)
+
 }
 
 func VoteThread(w http.ResponseWriter, r *http.Request) {
@@ -152,42 +154,8 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slugOrID := strings.TrimSuffix(RequestUrl, "/details")
 
-	if r.Method == "GET" {
-		var thread models.Thread
-
-		id, errInt := strconv.Atoi(slugOrID)
-		var err error
-		if errInt != nil {
-			slug := slugOrID
-
-			thread, err = SelectThread(slug)
-			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				w.Write(jsonToMessage("Can't find thread"))
-				return
-			}
-
-		} else {
-			thread, err = SelectThreadByID(int32(id))
-			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				w.Write(jsonToMessage("Can't find thread by id"))
-				return
-			}
-		}
-
-		body, err := json.Marshal(thread)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
-		return
-	}
-
 	var thread models.Thread
+
 	id, errInt := strconv.Atoi(slugOrID)
 	var err error
 	if errInt != nil {
@@ -207,6 +175,18 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 			w.Write(jsonToMessage("Can't find thread by id"))
 			return
 		}
+	}
+
+	if r.Method == "GET" {
+		body, err := json.Marshal(thread)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+		return
 	}
 
 	var threadUpdate models.Thread

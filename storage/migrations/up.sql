@@ -1,3 +1,36 @@
+ALTER SYSTEM SET
+ max_connections = '100';
+ALTER SYSTEM SET
+ shared_buffers = '2GB';
+ALTER SYSTEM SET
+ effective_cache_size = '6GB';
+ALTER SYSTEM SET
+ maintenance_work_mem = '512MB';
+ALTER SYSTEM SET
+ checkpoint_completion_target = '0.7';
+ALTER SYSTEM SET
+ wal_buffers = '16MB';
+ALTER SYSTEM SET
+ default_statistics_target = '100';
+ALTER SYSTEM SET
+ random_page_cost = '1.1';
+ALTER SYSTEM SET
+ effective_io_concurrency = '200';
+ALTER SYSTEM SET
+ work_mem = '20971kB';
+ALTER SYSTEM SET
+ min_wal_size = '1GB';
+ALTER SYSTEM SET
+ max_wal_size = '4GB';
+ALTER SYSTEM SET
+ max_worker_processes = '2';
+ALTER SYSTEM SET
+ max_parallel_workers_per_gather = '1';
+ALTER SYSTEM SET
+ max_parallel_workers = '2';
+ALTER SYSTEM SET
+ max_parallel_maintenance_workers = '1';
+ 
 CREATE UNLOGGED TABLE "users" (
   "about" varchar NOT NULL,
   "email" varchar NOT NULL,
@@ -125,13 +158,23 @@ CREATE TRIGGER edit_vote
     FOR EACH ROW
 EXECUTE PROCEDURE update_votes();
 
+CREATE INDEX post_first_parent_thread_index ON posts ((posts.path[1]), thread);
+CREATE INDEX post_first_parent_id_index ON posts ((posts.path[1]), id);
+CREATE INDEX post_first_parent_index ON posts ((posts.path[1]));
+CREATE INDEX post_path_index ON posts ((posts.path));
+CREATE INDEX post_thread_index ON posts (thread);
 CREATE INDEX post_thread_id_index ON posts (thread, id);
 CREATE INDEX post_path_id_index ON posts (id, (posts.path));
+
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
 CREATE INDEX users_nickname_lower_index ON users (lower(users.nickname));
 CREATE INDEX users_email_index ON users (lower(users.email));
 
-CREATE INDEX thread_id_index ON threads (id);
+CREATE INDEX thread_slug_index ON threads (slug);
+CREATE INDEX thread_slug_id_index ON threads (slug, id);
+CREATE INDEX thread_forum_lower_index ON threads (forum);
+CREATE INDEX thread_id_forum_index ON threads (id, forum);
+CREATE INDEX thread_created_index ON threads (created);
 
-CREATE INDEX vote_nickname ON votes (nickname, thread);
+CREATE INDEX vote_nickname ON votes (nickname, thread, voice);

@@ -146,6 +146,12 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(users) == 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+		return
+	}
+
 	body, err := json.Marshal(users)
 	if err != nil {
 		log.Println(err)
@@ -153,11 +159,7 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if len(users) != 0 {
-		w.Write(body)
-	} else {
-		w.Write([]byte("[]"))
-	}
+	w.Write(body)
 }
 
 func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +175,7 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if CheckThread(thread.Slug.String) && thread.Slug.String != "" {
+	if CheckThread(thread.Slug.String) {
 		thread, err := SelectThread(thread.Slug.String)
 		if err != nil {
 			log.Println(err)
