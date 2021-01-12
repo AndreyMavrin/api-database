@@ -112,8 +112,5 @@ func InsertVote(vote models.Vote) error {
 
 func UpdateVote(vote models.Vote) error {
 	_, err := models.DB.Exec(`UPDATE votes SET voice=$1 WHERE nickname=$2 AND thread=$3;`, vote.Voice, vote.Nickname, vote.Thread)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

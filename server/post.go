@@ -136,6 +136,12 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(posts) == 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+		return
+	}
+
 	body, err := json.Marshal(posts)
 	if err != nil {
 		log.Println(err)
@@ -143,11 +149,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if len(posts) != 0 {
-		w.Write(body)
-	} else {
-		w.Write([]byte("[]"))
-	}
+	w.Write(body)
 }
 
 func PostDetails(w http.ResponseWriter, r *http.Request) {

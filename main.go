@@ -14,10 +14,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// type AccessLogger struct {
-// 	LogrusLogger *logrus.Entry
-// }
-
 func DBConnection() *sql.DB {
 	connString := "host=localhost user=amavrin password=root dbname=forums sslmode=disable"
 
@@ -36,39 +32,10 @@ func DBConnection() *sql.DB {
 	return db
 }
 
-// func (ac *AccessLogger) AccessLogMiddleware(_ *mux.Router) mux.MiddlewareFunc {
-// 	return func(next http.Handler) http.Handler {
-// 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			next.ServeHTTP(w, r)
-
-// 			ac.LogrusLogger.WithFields(logrus.Fields{
-// 				"method":      r.Method,
-// 				"remote_addr": r.RemoteAddr,
-// 			}).Info(r.URL.Path)
-// 		})
-// 	}
-// }
-
 func main() {
 	models.DB = DBConnection()
 
 	router := mux.NewRouter()
-
-	// logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
-	// logrus.WithFields(logrus.Fields{
-	// 	"logger": "LOGRUS",
-	// }).Info("Starting server")
-
-	// AccessLogOut := new(AccessLogger)
-
-	// contextLogger := logrus.WithFields(logrus.Fields{
-	// 	"mode":   "[access_log]",
-	// 	"logger": "LOGRUS",
-	// })
-	// logrus.SetFormatter(&logrus.JSONFormatter{})
-	// AccessLogOut.LogrusLogger = contextLogger
-
-	// router.Use(AccessLogOut.AccessLogMiddleware(router))
 
 	router.HandleFunc("/health", server.HealthHandler)
 	router.HandleFunc("/api/user/{nickname}/create", server.CreateUser).Methods(http.MethodPost)
