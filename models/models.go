@@ -111,13 +111,6 @@ type Vote struct {
 	Thread   int64  `json:"-"`
 }
 
-type PostFull struct {
-	Author *User   `json:"author"`
-	Forum  *Forum  `json:"forum"`
-	Post   *Post   `json:"post"`
-	Thread *Thread `json:"thread"`
-}
-
 type Status struct {
 	Forum  int `json:"forum"`
 	Post   int `json:"post"`

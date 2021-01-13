@@ -1,18 +1,16 @@
 package server
 
 import (
+	"fmt"
 	"park_2020/api-database/models"
 
 	"github.com/jackc/pgx"
-	"github.com/lib/pq"
 )
 
-func InsertUser(user models.User) (models.User, error) {
-	row := models.DB.QueryRow(`INSERT INTO users(about, email, fullname, nickname) VALUES ($1, $2, $3, $4) RETURNING *;`,
+func InsertUser(user models.User) error {
+	_, err := models.DB.Exec(`INSERT INTO users(about, email, fullname, nickname) VALUES ($1, $2, $3, $4);`,
 		user.About, user.Email, user.Fullname, user.Nickname)
-	var u models.User
-	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
-	return u, err
+	return err
 }
 
 func CheckUserByNickname(nickname string) bool {
@@ -58,63 +56,29 @@ func UpdateUser(user models.User) (models.User, error) {
 
 func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User, error) {
 	var users []models.User
-	var usernames []string
 	var rows *pgx.Rows
 	var err error
-	rows, err = models.DB.Query(`SELECT author FROM threads WHERE forum=$1 UNION SELECT author FROM posts WHERE forum=$1;`, slug)
-	if err != nil {
-		return users, err
-	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var u string
-		err = rows.Scan(&u)
-		if err != nil {
-			return users, err
-		}
-		usernames = append(usernames, u)
-	}
-
-	if limit == 0 {
-		if since == "" {
-			if desc {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) COLLATE "C" DESC;`, pq.Array(usernames))
-			} else {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) COLLATE "C";`, pq.Array(usernames))
-			}
+	if desc {
+		if since != "" {
+			rows, err = models.DB.Query(`SELECT users.about, users.email, users.fullName, users.nickname FROM users
+				inner join users_forum uf on users.nickname = uf.nickname
+				WHERE uf.slug=$1 AND uf.nickname < $2 COLLATE "C"
+				ORDER BY users.nickname COLLATE "C" DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
 		} else {
-			if desc {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			AND LOWER(nickname) < LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" DESC;`, pq.Array(usernames), since)
-			} else {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			AND LOWER(nickname) > LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C";`, pq.Array(usernames), since)
-			}
+			rows, err = models.DB.Query(`SELECT users.about, users.email, users.fullName, users.nickname FROM users
+				inner join users_forum uf on users.nickname = uf.nickname
+				WHERE uf.slug=$1 ORDER BY users.nickname COLLATE "C" DESC LIMIT NULLIF($2, 0);`, slug, limit)
 		}
 	} else {
-		if since == "" {
-			if desc {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $2;`, pq.Array(usernames), limit)
-			} else {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			ORDER BY LOWER(nickname) COLLATE "C" LIMIT $2;`, pq.Array(usernames), limit)
-			}
-		} else {
-			if desc {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			AND LOWER(nickname) < LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" DESC LIMIT $3;`, pq.Array(usernames), since, limit)
-			} else {
-				rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE nickname = ANY($1)
-			AND LOWER(nickname) > LOWER($2) COLLATE "C" ORDER BY LOWER(nickname) COLLATE "C" LIMIT $3;`, pq.Array(usernames), since, limit)
-			}
-		}
+		rows, err = models.DB.Query(`SELECT users.about, users.email, users.fullName, users.nickname FROM users
+				inner join users_forum uf on users.nickname = uf.nickname
+				WHERE uf.slug=$1 AND uf.nickname > $2 COLLATE "C"
+				ORDER BY users.nickname COLLATE "C" LIMIT NULLIF($3, 0);`, slug, since, limit)
 	}
 
 	if err != nil {
+		fmt.Println(err)
 		return users, err
 	}
 	defer rows.Close()

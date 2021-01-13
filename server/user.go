@@ -33,7 +33,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Nickname = nickname
 
-	_, err = InsertUser(user)
+	err = InsertUser(user)
 	if err != nil {
 		users, err := SelectUsers(user.Email, user.Nickname)
 		if err != nil {

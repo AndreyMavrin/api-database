@@ -11,6 +11,62 @@ import (
 	"github.com/jackc/pgx"
 )
 
+func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/forum/")
+	slug := strings.TrimSuffix(RequestUrl, "/create")
+
+	var thread models.Thread
+	err := json.NewDecoder(r.Body).Decode(&thread)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	forum, err := SelectForum(slug)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread forum"))
+		return
+	}
+
+	thread.Forum = forum.Slug
+	threadInsert, err := InsertThread(thread)
+	if err != nil {
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23505" {
+			thread, err := SelectThread(thread.Slug.String)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			body, err := json.Marshal(thread)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			w.WriteHeader(http.StatusConflict)
+			w.Write(body)
+
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread author"))
+		return
+	}
+
+	body, err := json.Marshal(threadInsert)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write(body)
+}
+
 func ForumThreads(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

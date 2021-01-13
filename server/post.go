@@ -165,15 +165,18 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	related := r.URL.Query().Get("related")
-
 	if r.Method == "GET" {
-		var postFull models.PostFull
 		post, err := SelectPostByID(id)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find post by id"))
 			return
+		}
+
+		related := r.URL.Query().Get("related")
+
+		postFull := map[string]interface{}{
+			"post": post,
 		}
 
 		if strings.Contains(related, "user") {
@@ -182,7 +185,7 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				return
 			}
-			postFull.Author = &user
+			postFull["author"] = user
 		}
 
 		if strings.Contains(related, "forum") {
@@ -191,7 +194,7 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				return
 			}
-			postFull.Forum = &forum
+			postFull["forum"] = forum
 		}
 
 		if strings.Contains(related, "thread") {
@@ -200,10 +203,8 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				return
 			}
-			postFull.Thread = &thread
+			postFull["thread"] = thread
 		}
-
-		postFull.Post = &post
 
 		body, err := json.Marshal(postFull)
 		if err != nil {
