@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"park_2020/api-database/models"
+
+	"github.com/jackc/pgx"
 )
 
 func jsonToMessage(message string) []byte {
@@ -95,7 +97,7 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 	userUpdate.Nickname = nickname
 	user, err := UpdateUser(userUpdate)
 	if err != nil {
-		if CheckUserByEmail(userUpdate.Email) {
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23505" {
 			w.WriteHeader(http.StatusConflict)
 			w.Write(jsonToMessage("This email is already registered"))
 			return

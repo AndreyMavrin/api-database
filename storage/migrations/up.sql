@@ -96,8 +96,10 @@ $update_users_forum$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION update_votes() RETURNS TRIGGER AS
 $update_users_forum$
-BEGIN
-    UPDATE threads SET votes=(votes+NEW.voice*2) WHERE id=NEW.thread;
+begin
+	IF OLD.voice <> NEW.voice THEN
+    	UPDATE threads SET votes=(votes+NEW.voice*2) WHERE id=NEW.thread;
+    END IF;
     return NEW;
 end
 $update_users_forum$ LANGUAGE plpgsql;

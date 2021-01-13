@@ -1,9 +1,9 @@
 package server
 
 import (
-	"database/sql"
 	"park_2020/api-database/models"
 
+	"github.com/jackc/pgx"
 	"github.com/lib/pq"
 )
 
@@ -13,12 +13,6 @@ func InsertUser(user models.User) (models.User, error) {
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
 	return u, err
-}
-
-func CheckUserByEmail(email string) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE email=$1;`, email).Scan(&count)
-	return count > 0
 }
 
 func CheckUserByNickname(nickname string) bool {
@@ -65,7 +59,7 @@ func UpdateUser(user models.User) (models.User, error) {
 func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User, error) {
 	var users []models.User
 	var usernames []string
-	var rows *sql.Rows
+	var rows *pgx.Rows
 	var err error
 	rows, err = models.DB.Query(`SELECT author FROM threads WHERE forum=$1 UNION SELECT author FROM posts WHERE forum=$1;`, slug)
 	if err != nil {

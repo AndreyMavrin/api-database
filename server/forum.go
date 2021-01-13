@@ -7,6 +7,8 @@ import (
 	"park_2020/api-database/models"
 	"strconv"
 	"strings"
+
+	"github.com/jackc/pgx"
 )
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -171,24 +173,6 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if CheckThread(thread.Slug.String) {
-		thread, err := SelectThread(thread.Slug.String)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		body, err := json.Marshal(thread)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusConflict)
-		w.Write(body)
-		return
-	}
-
 	forum, err := SelectForum(slug)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -197,14 +181,32 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 	}
 
 	thread.Forum = forum.Slug
-	thread, err = InsertThread(thread)
+	threadInsert, err := InsertThread(thread)
 	if err != nil {
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23505" {
+			thread, err := SelectThread(thread.Slug.String)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			body, err := json.Marshal(thread)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			w.WriteHeader(http.StatusConflict)
+			w.Write(body)
+
+			return
+		}
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find thread author"))
 		return
 	}
 
-	body, err := json.Marshal(thread)
+	body, err := json.Marshal(threadInsert)
 	if err != nil {
 		log.Println(err)
 		return

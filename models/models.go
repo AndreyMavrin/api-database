@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx"
 )
 
-var DB *sql.DB
+var DB *pgx.ConnPool
 
 type User struct {
 	About    string `json:"about"`

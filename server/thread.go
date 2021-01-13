@@ -7,6 +7,8 @@ import (
 	"park_2020/api-database/models"
 	"strconv"
 	"strings"
+
+	"github.com/jackc/pgx"
 )
 
 func ForumThreads(w http.ResponseWriter, r *http.Request) {
@@ -28,16 +30,13 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/forum/")
 	forum := strings.TrimSuffix(RequestUrl, "/threads")
 
-	if !CheckForum(forum) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find forum"))
-		return
-	}
-
 	threads, err := SelectThreads(forum, since, limit, desc)
-	if err != nil {
-		log.Println(err)
-		return
+	if err == pgx.ErrNoRows || len(threads) == 0 {
+		if !CheckForum(forum) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find forum"))
+			return
+		}
 	}
 
 	if len(threads) == 0 {
@@ -70,12 +69,6 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slugOrID := strings.TrimSuffix(RequestUrl, "/vote")
 
-	if !CheckUserByNickname(vote.Nickname) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find user"))
-		return
-	}
-
 	var thread models.Thread
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
@@ -87,52 +80,32 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
+	}
 
-		vote.Thread = int64(thread.ID)
-		err = InsertVote(vote)
-		if err != nil {
-			err = UpdateVote(vote)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		}
-
-		threadUpdate, err := SelectThread(thread.Slug.String)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		if threadUpdate.Votes < 0 {
-			threadUpdate.Votes *= -1
-		}
-
-		body, err := json.Marshal(threadUpdate)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
-		return
+	if thread.ID != 0 {
+		id = int(thread.ID)
 	}
 
 	vote.Thread = int64(id)
 	err = InsertVote(vote)
 	if err != nil {
-		err = UpdateVote(vote)
-		if err != nil {
-			log.Println(err)
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23505" {
+			err = UpdateVote(vote)
+			if err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write(jsonToMessage("Can't find thread by slug"))
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
 	}
 
 	threadUpdate, err := SelectThreadByID(int32(id))
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread by id"))
+		log.Println(err)
 		return
 	}
 
