@@ -17,19 +17,19 @@ func InsertUser(user models.User) (models.User, error) {
 
 func CheckUserByEmail(email string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE email ILIKE $1;`, email).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE email=$1;`, email).Scan(&count)
 	return count > 0
 }
 
 func CheckUserByNickname(nickname string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE nickname ILIKE $1;`, nickname).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE nickname=$1;`, nickname).Scan(&count)
 	return count > 0
 }
 
 func SelectUsers(email, nickname string) ([]models.User, error) {
 	var users []models.User
-	rows, err := models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE email ILIKE $1 OR nickname ILIKE $2;`, email, nickname)
+	rows, err := models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE email=$1 OR nickname=$2 LIMIT 2;`, email, nickname)
 	if err != nil {
 		return users, err
 	}
@@ -46,7 +46,7 @@ func SelectUsers(email, nickname string) ([]models.User, error) {
 }
 
 func SelectUserByNickname(nickname string) (models.User, error) {
-	row := models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname ILIKE $1;`, nickname)
+	row := models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname=$1;`, nickname)
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
 	return u, err
@@ -67,7 +67,7 @@ func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User
 	var usernames []string
 	var rows *sql.Rows
 	var err error
-	rows, err = models.DB.Query(`SELECT author FROM threads WHERE forum ILIKE $1 UNION SELECT author FROM posts WHERE forum ILIKE $1;`, slug)
+	rows, err = models.DB.Query(`SELECT author FROM threads WHERE forum=$1 UNION SELECT author FROM posts WHERE forum=$1;`, slug)
 	if err != nil {
 		return users, err
 	}
@@ -146,7 +146,7 @@ func SelectUserByPost(id int) (models.User, error) {
 		return user, err
 	}
 
-	row = models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname ILIKE $1;`, author)
+	row = models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname=$1;`, author)
 	err = row.Scan(&user.About, &user.Email, &user.Fullname, &user.Nickname)
 	if err != nil {
 		return user, err

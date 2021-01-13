@@ -31,7 +31,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Nickname = nickname
 
-	if CheckUserByEmail(user.Email) || CheckUserByNickname(nickname) {
+	_, err = InsertUser(user)
+	if err != nil {
 		users, err := SelectUsers(user.Email, user.Nickname)
 		if err != nil {
 			log.Println(err)
@@ -46,12 +47,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusConflict)
 		w.Write(body)
-		return
-	}
-
-	user, err = InsertUser(user)
-	if err != nil {
-		log.Println(err)
 		return
 	}
 
@@ -97,15 +92,14 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if CheckUserByEmail(userUpdate.Email) {
-		w.WriteHeader(http.StatusConflict)
-		w.Write(jsonToMessage("This email is already registered"))
-		return
-	}
-
 	userUpdate.Nickname = nickname
 	user, err := UpdateUser(userUpdate)
 	if err != nil {
+		if CheckUserByEmail(userUpdate.Email) {
+			w.WriteHeader(http.StatusConflict)
+			w.Write(jsonToMessage("This email is already registered"))
+			return
+		}
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find user"))
 		return
