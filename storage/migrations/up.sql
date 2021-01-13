@@ -56,6 +56,15 @@ CREATE UNLOGGED TABLE "votes" (
    UNIQUE (nickname, thread)
 );
 
+CREATE UNLOGGED TABLE users_forum
+(
+    nickname citext NOT NULL,
+    Slug     citext NOT NULL,
+    FOREIGN KEY (nickname) REFERENCES "users" (nickname),
+    FOREIGN KEY (Slug) REFERENCES "forums" (Slug),
+    UNIQUE (nickname, Slug)
+);
+
 CREATE OR REPLACE FUNCTION update_threads_count() RETURNS TRIGGER AS
 $update_users_forum$
 BEGIN
@@ -104,6 +113,14 @@ begin
 end
 $update_users_forum$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION update_user_forum() RETURNS TRIGGER AS
+$update_users_forum$
+BEGIN
+    INSERT INTO users_forum (nickname, Slug) VALUES (NEW.author, NEW.forum) on conflict do nothing;
+    return NEW;
+end
+$update_users_forum$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER add_thread_to_forum
     BEFORE INSERT
@@ -129,6 +146,18 @@ CREATE TRIGGER edit_vote
     FOR EACH ROW
 EXECUTE PROCEDURE update_votes();
 
+CREATE TRIGGER thread_insert_user_forum
+    AFTER INSERT
+    ON threads
+    FOR EACH ROW
+EXECUTE PROCEDURE update_user_forum();
+
+CREATE TRIGGER post_insert_user_forum
+    AFTER INSERT
+    ON posts
+    FOR EACH ROW
+EXECUTE PROCEDURE update_user_forum();
+
 CREATE INDEX post_first_parent_thread_index ON posts ((posts.path[1]), thread);
 CREATE INDEX post_first_parent_id_index ON posts ((posts.path[1]), id);
 CREATE INDEX post_first_parent_index ON posts ((posts.path[1]));
@@ -136,6 +165,10 @@ CREATE INDEX post_path_index ON posts ((posts.path));
 CREATE INDEX post_thread_index ON posts (thread);
 CREATE INDEX post_thread_id_index ON posts (thread, id);
 CREATE INDEX post_path_id_index ON posts (id, (posts.path));
+CREATE INDEX post_thread_id_index_desc ON posts (id DESC, thread);
+CREATE INDEX post_thread_id_index_asc ON posts (id ASC, thread);
+CREATE INDEX post_thread_id_path_index_asc ON posts (path ASC, id ASC, thread);
+CREATE INDEX post_thread_id_path_index_desc ON posts (path DESC, id ASC, thread);
 
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 

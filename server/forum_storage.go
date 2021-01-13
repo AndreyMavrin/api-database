@@ -52,9 +52,6 @@ func StatusForum() models.Status {
 
 func ClearDB() error {
 	var err error
-	_, err = models.DB.Exec(`TRUNCATE users CASCADE;`)
-	_, err = models.DB.Exec(`TRUNCATE forums CASCADE;`)
-	_, err = models.DB.Exec(`TRUNCATE threads CASCADE;`)
-	_, err = models.DB.Exec(`TRUNCATE posts CASCADE;`)
+	_, err = models.DB.Exec(`TRUNCATE users, forums, threads, posts, votes, users_forum;`)
 	return err
 }
