@@ -1,8 +1,9 @@
 package server
 
 import (
-	"database/sql"
 	"park_2020/api-database/models"
+
+	"github.com/jackc/pgx"
 )
 
 func InsertPost(post models.Post) (models.Post, error) {
@@ -15,7 +16,7 @@ func InsertPost(post models.Post) (models.Post, error) {
 
 func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]models.Post, error) {
 	var posts []models.Post
-	var rows *sql.Rows
+	var rows *pgx.Rows
 	var err error
 
 	if since == 0 {
@@ -97,13 +98,10 @@ func SelectPostByID(id int) (models.Post, error) {
 	return post, nil
 }
 
-func UpdatePost(post models.Post, postUpdate models.PostUpdate) (models.Post, error) {
-	if postUpdate.Message != "" && postUpdate.Message != post.Message {
-		row := models.DB.QueryRow(`UPDATE posts SET message=$1, is_edited=true WHERE message=$2 RETURNING *;`, postUpdate.Message, post.Message)
-		err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread, &post.Path)
-		if err != nil {
-			return post, err
-		}
-	}
-	return post, nil
+func UpdatePost(postUpdate models.PostUpdate, id int) (models.Post, error) {
+	var p models.Post
+	row := models.DB.QueryRow(`UPDATE posts SET message=COALESCE(NULLIF($1, ''), message), 
+		is_edited = CASE WHEN $1 = '' OR message = $1 THEN is_edited ELSE true END WHERE id=$2 RETURNING *;`, postUpdate.Message, id)
+	err := row.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
+	return p, err
 }

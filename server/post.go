@@ -216,13 +216,6 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := SelectPostByID(id)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find post by id"))
-		return
-	}
-
 	var postUpdate models.PostUpdate
 	err = json.NewDecoder(r.Body).Decode(&postUpdate)
 	if err != nil {
@@ -230,9 +223,10 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err = UpdatePost(post, postUpdate)
+	post, err := UpdatePost(postUpdate, id)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find post by id"))
 		return
 	}
 

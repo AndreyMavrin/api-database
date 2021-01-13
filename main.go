@@ -1,39 +1,39 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 
 	"park_2020/api-database/models"
 	"park_2020/api-database/server"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx"
 
 	_ "github.com/lib/pq"
 )
 
-func DBConnection() *sql.DB {
-	connString := "host=localhost user=amavrin password=root dbname=forums sslmode=disable"
-
-	db, err := sql.Open("postgres", connString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db.SetMaxOpenConns(10)
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-}
-
 func main() {
-	models.DB = DBConnection()
+	connString := "host=localhost user=amavrin password=root dbname=forums sslmode=disable"
+	pgxConn, err := pgx.ParseConnectionString(connString)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	pgxConn.PreferSimpleProtocol = true
+
+	config := pgx.ConnPoolConfig{
+		ConnConfig:     pgxConn,
+		MaxConnections: 100,
+		AfterConnect:   nil,
+		AcquireTimeout: 0,
+	}
+
+	models.DB, err = pgx.NewConnPool(config)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
 	router := mux.NewRouter()
 

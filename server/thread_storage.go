@@ -1,13 +1,14 @@
 package server
 
 import (
-	"database/sql"
 	"park_2020/api-database/models"
 	"time"
+
+	"github.com/jackc/pgx"
 )
 
 func InsertThread(thread models.Thread) (models.Thread, error) {
-	var row *sql.Row
+	var row *pgx.Row
 	timeCreated := time.Now()
 	if thread.Created == timeCreated {
 		row = models.DB.QueryRow(`INSERT INTO threads(author, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5) RETURNING *;`,
@@ -19,12 +20,6 @@ func InsertThread(thread models.Thread) (models.Thread, error) {
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
-}
-
-func CheckThread(slug string) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM threads WHERE slug=$1;`, slug).Scan(&count)
-	return count > 0
 }
 
 func SelectThread(slug string) (models.Thread, error) {
@@ -43,7 +38,7 @@ func SelectThreadByID(id int32) (models.Thread, error) {
 
 func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, error) {
 	var threads []models.Thread
-	var rows *sql.Rows
+	var rows *pgx.Rows
 	var err error
 
 	if since != "" {
