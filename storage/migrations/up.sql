@@ -1,59 +1,28 @@
-ALTER SYSTEM SET
- max_connections = '100';
-ALTER SYSTEM SET
- shared_buffers = '2GB';
-ALTER SYSTEM SET
- effective_cache_size = '6GB';
-ALTER SYSTEM SET
- maintenance_work_mem = '512MB';
-ALTER SYSTEM SET
- checkpoint_completion_target = '0.7';
-ALTER SYSTEM SET
- wal_buffers = '16MB';
-ALTER SYSTEM SET
- default_statistics_target = '100';
-ALTER SYSTEM SET
- random_page_cost = '1.1';
-ALTER SYSTEM SET
- effective_io_concurrency = '200';
-ALTER SYSTEM SET
- work_mem = '20971kB';
-ALTER SYSTEM SET
- min_wal_size = '1GB';
-ALTER SYSTEM SET
- max_wal_size = '4GB';
-ALTER SYSTEM SET
- max_worker_processes = '2';
-ALTER SYSTEM SET
- max_parallel_workers_per_gather = '1';
-ALTER SYSTEM SET
- max_parallel_workers = '2';
-ALTER SYSTEM SET
- max_parallel_maintenance_workers = '1';
- 
+CREATE EXTENSION IF NOT EXISTS citext;
+
 CREATE UNLOGGED TABLE "users" (
-  "about" varchar NOT NULL,
-  "email" varchar NOT NULL,
+  "about" varchar,
+  "email" CITEXT UNIQUE,
   "fullname" varchar NOT NULL,
-  "nickname" varchar PRIMARY KEY
+  "nickname" CITEXT PRIMARY KEY
 );
 
 CREATE UNLOGGED TABLE "forums" (
-  "username" varchar NOT null,
+  "username" CITEXT NOT null,
   "posts" BIGINT DEFAULT 0,
   "threads" int DEFAULT 0,
-  "slug" varchar PRIMARY KEY,
+  "slug" CITEXT PRIMARY KEY,
   "title" varchar NOT NULL,
   FOREIGN KEY ("username") REFERENCES "users" (nickname)
 );
 
 CREATE UNLOGGED TABLE "threads" (
-  "author" varchar NOT NULL,
+  "author" CITEXT NOT NULL,
   "created" timestamp with time zone default now(),
-  "forum" varchar NOT NULL,
+  "forum" CITEXT NOT NULL,
   "id" SERIAL PRIMARY KEY,
   "message" varchar NOT NULL,
-  "slug" varchar UNIQUE,
+  "slug" CITEXT UNIQUE,
   "title" varchar NOT NULL,
   "votes" int DEFAULT 0,
   FOREIGN KEY (author) REFERENCES "users" (nickname),
@@ -61,9 +30,9 @@ CREATE UNLOGGED TABLE "threads" (
 );
 
 CREATE UNLOGGED TABLE "posts" (
-  "author" varchar NOT NULL,
+  "author" CITEXT NOT NULL,
   "created" timestamp with time zone default now(),
-  "forum" varchar NOT NULL,
+  "forum" CITEXT NOT NULL,
   "id" BIGSERIAL PRIMARY KEY,
   "is_edited" BOOLEAN DEFAULT false,
   "message" varchar NOT NULL,
@@ -78,7 +47,7 @@ CREATE UNLOGGED TABLE "posts" (
 );
 
 CREATE UNLOGGED TABLE "votes" (
-  "nickname" varchar NOT NULL,
+  "nickname" CITEXT,
   "voice" int,
   "thread" int,
   

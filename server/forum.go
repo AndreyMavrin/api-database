@@ -58,7 +58,8 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 
 	forum.User = user.Nickname
 
-	if CheckForum(forum.Slug) {
+	_, err = InsertForum(forum)
+	if err != nil {
 		forum, err = SelectForum(forum.Slug)
 		if err != nil {
 			log.Println(err)
@@ -73,12 +74,6 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusConflict)
 		w.Write(body)
-		return
-	}
-
-	forum, err = InsertForum(forum)
-	if err != nil {
-		log.Println(err)
 		return
 	}
 
@@ -142,7 +137,8 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := SelectUsersByForum(slug, since, limit, desc)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find forum"))
 		return
 	}
 

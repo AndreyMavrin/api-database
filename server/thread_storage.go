@@ -23,12 +23,12 @@ func InsertThread(thread models.Thread) (models.Thread, error) {
 
 func CheckThread(slug string) bool {
 	var count int
-	models.DB.QueryRow(`SELECT COUNT(id) FROM threads WHERE slug ILIKE $1;`, slug).Scan(&count)
+	models.DB.QueryRow(`SELECT COUNT(id) FROM threads WHERE slug=$1;`, slug).Scan(&count)
 	return count > 0
 }
 
 func SelectThread(slug string) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug ILIKE $1;`, slug)
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug=$1;`, slug)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
@@ -49,18 +49,18 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 	if since != "" {
 		if desc {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum ILIKE $1 AND created <= $2 ORDER BY created DESC LIMIT $3;`, forum, since, limit)
+		WHERE forum=$1 AND created <= $2 ORDER BY created DESC LIMIT $3;`, forum, since, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum ILIKE $1 AND created >= $2 ORDER BY created ASC LIMIT $3;`, forum, since, limit)
+		WHERE forum=$1 AND created >= $2 ORDER BY created ASC LIMIT $3;`, forum, since, limit)
 		}
 	} else {
 		if desc {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum ILIKE $1 ORDER BY created DESC LIMIT $2;`, forum, limit)
+		WHERE forum=$1 ORDER BY created DESC LIMIT $2;`, forum, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum ILIKE $1 ORDER BY created ASC LIMIT $2;`, forum, limit)
+		WHERE forum=$1 ORDER BY created ASC LIMIT $2;`, forum, limit)
 		}
 	}
 
