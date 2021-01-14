@@ -165,10 +165,6 @@ CREATE INDEX post_path_index ON posts ((posts.path));
 CREATE INDEX post_thread_index ON posts (thread);
 CREATE INDEX post_thread_id_index ON posts (thread, id);
 CREATE INDEX post_path_id_index ON posts (id, (posts.path));
-CREATE INDEX post_thread_id_index_desc ON posts (id DESC, thread);
-CREATE INDEX post_thread_id_index_asc ON posts (id ASC, thread);
-CREATE INDEX post_thread_id_path_index_asc ON posts (path ASC, id ASC, thread);
-CREATE INDEX post_thread_id_path_index_desc ON posts (path DESC, id ASC, thread);
 
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
