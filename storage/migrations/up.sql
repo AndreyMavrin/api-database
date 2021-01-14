@@ -158,27 +158,24 @@ CREATE TRIGGER post_insert_user_forum
     FOR EACH ROW
 EXECUTE PROCEDURE update_user_forum();
 
-CREATE INDEX post_first_parent_thread_index ON posts ((posts.path[1]), thread);
-CREATE INDEX post_first_parent_id_index ON posts ((posts.path[1]), id);
-CREATE INDEX post_first_parent_index ON posts ((posts.path[1]));
-CREATE INDEX post_path_index ON posts ((posts.path));
-CREATE INDEX post_thread_index ON posts (thread);
-CREATE INDEX post_thread_id_index ON posts (thread, id);
-CREATE INDEX post_path_id_index ON posts (id, (posts.path));
+CREATE INDEX user_nickname ON users using hash (nickname);
+CREATE INDEX user_email ON users using hash (email);
 
-CREATE INDEX users_forum_forum_user_index ON users_forum (lower(users_forum.Slug), nickname);
-CREATE INDEX users_forum_user_index ON users_forum (nickname);
-CREATE INDEX users_forum_forum_index ON users_forum ((users_forum.Slug));
+CREATE INDEX forum_slug ON forums using hash (slug);
 
-CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
+CREATE UNIQUE INDEX forum_users_unique on users_forum (slug, nickname);
+CLUSTER users_forum USING forum_users_unique;
 
-CREATE INDEX users_nickname_lower_index ON users (lower(users.nickname));
-CREATE INDEX users_email_index ON users (lower(users.email));
+CREATE INDEX thr_slug ON threads using hash (slug);
+CREATE INDEX thr_date ON threads (created);
+CREATE INDEX thr_forum ON threads using hash (forum);
+CREATE INDEX thr_forum_date ON threads (forum, created);
 
-CREATE INDEX thread_slug_index ON threads (slug);
-CREATE INDEX thread_slug_id_index ON threads (slug, id);
-CREATE INDEX thread_forum_lower_index ON threads (forum);
-CREATE INDEX thread_id_forum_index ON threads (id, forum);
-CREATE INDEX thread_created_index ON threads (created);
+CREATE INDEX post_id_path on posts (id, (path[1]));
+CREATE INDEX post_thread_id_path1_parent on posts (thread, id, (path[1]), parent);
+CREATE INDEX post_thread_path_id on posts (thread, path, id);
+CREATE INDEX post_path1 on posts ((path[1]));
+CREATE INDEX post_thread_id on posts (thread, id);
+CREATE INDEX post_thr_id ON posts (thread);
 
-CREATE INDEX vote_nickname ON votes (nickname, thread, voice);
+CREATE UNIQUE INDEX vote_unique on votes (nickname, thread);
