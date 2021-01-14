@@ -1,3 +1,14 @@
+ALTER SYSTEM SET checkpoint_completion_target = '0.9';
+ALTER SYSTEM SET wal_buffers = '6912kB';
+ALTER SYSTEM SET default_statistics_target = '100';
+ALTER SYSTEM SET effective_io_concurrency = '200';
+ALTER SYSTEM SET max_worker_processes = '4';
+ALTER SYSTEM SET max_parallel_workers_per_gather = '2';
+ALTER SYSTEM SET max_parallel_workers = '4';
+ALTER SYSTEM SET max_parallel_maintenance_workers = '2';
+ALTER SYSTEM SET random_page_cost = '0.1';
+ALTER SYSTEM SET seq_page_cost = '0.1';
+
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE UNLOGGED TABLE "users" (
@@ -165,6 +176,10 @@ CREATE INDEX post_path_index ON posts ((posts.path));
 CREATE INDEX post_thread_index ON posts (thread);
 CREATE INDEX post_thread_id_index ON posts (thread, id);
 CREATE INDEX post_path_id_index ON posts (id, (posts.path));
+
+CREATE INDEX users_forum_forum_user_index ON users_forum (lower(users_forum.Slug), nickname);
+CREATE INDEX users_forum_user_index ON users_forum (nickname);
+CREATE INDEX users_forum_forum_index ON users_forum ((users_forum.Slug));
 
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
