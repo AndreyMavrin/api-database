@@ -1,17 +1,49 @@
 package server
 
 import (
+	"fmt"
 	"park_2020/api-database/models"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx"
 )
 
-func InsertPost(post models.Post) (models.Post, error) {
-	row := models.DB.QueryRow(`INSERT INTO posts(author, created, forum, message, parent, thread) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
-		post.Author, post.Created, post.Forum, post.Message, post.Parent, post.Thread)
-	var p models.Post
-	err := row.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
-	return p, err
+func InsertPosts(posts []models.Post, thread models.Thread) ([]models.Post, error) {
+	var insertedPosts []models.Post
+	query := `INSERT INTO posts(author, created, forum, message, parent, thread) VALUES `
+	var values []interface{}
+	timeCreated := time.Now()
+	for i, post := range posts {
+		value := fmt.Sprintf(
+			"($%d, $%d, $%d, $%d, $%d, $%d),",
+			i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6,
+		)
+
+		query += value
+		values = append(values, post.Author, timeCreated, thread.Forum, post.Message, post.Parent, thread.ID)
+	}
+
+	query = strings.TrimSuffix(query, ",")
+	query += ` RETURNING *`
+
+	rows, err := models.DB.Query(query, values...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.Post
+		err := rows.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
+		if err != nil {
+			return nil, err
+		}
+
+		insertedPosts = append(insertedPosts, p)
+
+	}
+	return insertedPosts, nil
 }
 
 func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]models.Post, error) {

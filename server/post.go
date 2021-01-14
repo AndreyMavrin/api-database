@@ -7,7 +7,8 @@ import (
 	"park_2020/api-database/models"
 	"strconv"
 	"strings"
-	"time"
+
+	"github.com/jackc/pgx"
 )
 
 func CreatePosts(w http.ResponseWriter, r *http.Request) {
@@ -52,28 +53,19 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeCreated := time.Now()
-
-	var postsCreated []models.Post
-	for _, post := range posts {
-
-		post.Thread = thread.ID
-		post.Forum = thread.Forum
-		post.Created = timeCreated
-
-		post, err = InsertPost(post)
-		if err != nil {
-			if !CheckUserByNickname(posts[0].Author) {
-				w.WriteHeader(http.StatusNotFound)
-				w.Write(jsonToMessage("Can't find post author by nickname"))
-				return
-			}
-			w.WriteHeader(http.StatusConflict)
-			w.Write(jsonToMessage("Parent post was created in another thread"))
+	postsCreated, err := InsertPosts(posts, thread)
+	if len(postsCreated) == 0 {
+		err = pgx.ErrNoRows
+	}
+	if err != nil {
+		if !CheckUserByNickname(posts[0].Author) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post author by nickname"))
 			return
 		}
-
-		postsCreated = append(postsCreated, post)
+		w.WriteHeader(http.StatusConflict)
+		w.Write(jsonToMessage("Parent post was created in another thread"))
+		return
 	}
 
 	body, err := json.Marshal(postsCreated)
