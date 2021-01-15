@@ -122,7 +122,7 @@ func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]mode
 
 func SelectPostByID(id int) (models.Post, error) {
 	var post models.Post
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, is_edited, message, parent, thread FROM posts WHERE id = $1;`, id)
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, is_edited, message, parent, thread FROM posts WHERE id = $1 LIMIT 1;`, id)
 	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread)
 	if err != nil {
 		return post, err

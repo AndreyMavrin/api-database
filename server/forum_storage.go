@@ -13,26 +13,10 @@ func InsertForum(forum models.Forum) (models.Forum, error) {
 }
 
 func SelectForum(slug string) (models.Forum, error) {
-	row := models.DB.QueryRow(`SELECT username, posts, threads, slug, title FROM forums WHERE slug=$1;`, slug)
+	row := models.DB.QueryRow(`SELECT username, posts, threads, slug, title FROM forums WHERE slug=$1 LIMIT 1;`, slug)
 	var f models.Forum
 	err := row.Scan(&f.User, &f.Posts, &f.Threads, &f.Slug, &f.Title)
 	return f, err
-}
-
-func SelectForumByPost(id int) (models.Forum, error) {
-	var forum models.Forum
-	row := models.DB.QueryRow(`SELECT forum FROM posts WHERE id=$1;`, id)
-	err := row.Scan(&forum.Slug)
-	if err != nil {
-		return forum, err
-	}
-
-	forum, err = SelectForum(forum.Slug)
-	if err != nil {
-		return forum, err
-	}
-
-	return forum, nil
 }
 
 func StatusForum() models.Status {

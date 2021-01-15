@@ -172,7 +172,7 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.Contains(related, "user") {
-			user, err := SelectUserByPost(id)
+			user, err := SelectUserByNickname(post.Author)
 			if err != nil {
 				log.Println(err)
 				return
@@ -181,7 +181,7 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.Contains(related, "forum") {
-			forum, err := SelectForumByPost(id)
+			forum, err := SelectForum(post.Forum)
 			if err != nil {
 				log.Println(err)
 				return
@@ -190,7 +190,7 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if strings.Contains(related, "thread") {
-			thread, err := SelectThreadByPost(id)
+			thread, err := SelectThreadByID(post.Thread)
 			if err != nil {
 				log.Println(err)
 				return
