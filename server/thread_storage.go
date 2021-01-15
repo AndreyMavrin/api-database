@@ -10,16 +10,40 @@ import (
 func InsertThread(thread models.Thread) (models.Thread, error) {
 	var row *pgx.Row
 	timeCreated := time.Now()
+	var th models.Thread
+	forum, err := SelectForum(thread.Forum)
+	if err != nil {
+		return th, err
+	}
 	if thread.Created == timeCreated {
 		row = models.DB.QueryRow(`INSERT INTO threads(author, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5) RETURNING *;`,
-			thread.Author, thread.Forum, thread.Message, thread.Slug, thread.Title)
+			thread.Author, forum.Slug, thread.Message, thread.Slug, thread.Title)
 	} else {
 		row = models.DB.QueryRow(`INSERT INTO threads(author, created, forum, message, slug, title) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
-			thread.Author, thread.Created, thread.Forum, thread.Message, thread.Slug, thread.Title)
+			thread.Author, thread.Created, forum.Slug, thread.Message, thread.Slug, thread.Title)
 	}
-	var th models.Thread
-	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
+
+	err = row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
+}
+
+func CheckThread(slug string) bool {
+	var exists bool
+	models.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM threads WHERE forum=$1)`, slug).Scan(&exists)
+	return exists
+}
+
+func CheckThreadByID(id int) bool {
+	var exists bool
+	models.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM threads WHERE id=$1)`, id).Scan(&exists)
+	return exists
+}
+
+func SelectThreadID(slug string) (int, error) {
+	var id int
+	row := models.DB.QueryRow(`SELECT id FROM threads WHERE slug=$1 LIMIT 1;`, slug)
+	err := row.Scan(&id)
+	return id, err
 }
 
 func SelectThread(slug string) (models.Thread, error) {
@@ -44,18 +68,18 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 	if since != "" {
 		if desc {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum=$1 AND created <= $2 ORDER BY created DESC LIMIT $3;`, forum, since, limit)
+		WHERE forum=$1 AND created <= $2 ORDER BY created DESC LIMIT NULLIF($3, 0);`, forum, since, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum=$1 AND created >= $2 ORDER BY created ASC LIMIT $3;`, forum, since, limit)
+		WHERE forum=$1 AND created >= $2 ORDER BY created ASC LIMIT NULLIF($3, 0);`, forum, since, limit)
 		}
 	} else {
 		if desc {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum=$1 ORDER BY created DESC LIMIT $2;`, forum, limit)
+		WHERE forum=$1 ORDER BY created DESC LIMIT NULLIF($2, 0);`, forum, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT author, created, forum, id, message, slug, title, votes FROM threads
-		WHERE forum=$1 ORDER BY created ASC LIMIT $2;`, forum, limit)
+		WHERE forum=$1 ORDER BY created ASC LIMIT NULLIF($2, 0);`, forum, limit)
 		}
 	}
 

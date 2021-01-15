@@ -18,26 +18,23 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slugOrID := strings.TrimSuffix(RequestUrl, "/create")
 
-	var thread models.Thread
 	var err error
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
 
-		thread, err = SelectThread(slug)
+		id, err = SelectThreadID(slug)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find post thread by slug"))
+			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
+	}
 
-	} else {
-		thread, err = SelectThreadByID(int32(id))
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find post thread by id"))
-			return
-		}
+	if !CheckThreadByID(id) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by id"))
+		return
 	}
 
 	var posts []models.Post
@@ -53,7 +50,7 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postsCreated, err := InsertPosts(posts, thread)
+	postsCreated, err := InsertPosts(posts, id)
 	if len(postsCreated) == 0 {
 		err = pgx.ErrNoRows
 	}
@@ -101,34 +98,30 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slugOrID := strings.TrimSuffix(RequestUrl, "/posts")
 
-	var thread models.Thread
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
 
-		thread, err = SelectThread(slug)
+		id, err = SelectThreadID(slug)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
-
-	} else {
-		thread, err = SelectThreadByID(int32(id))
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread by id"))
-			return
-		}
 	}
 
-	posts, err := SelectPosts(int(thread.ID), limit, since, sort, desc)
+	posts, err := SelectPosts(id, limit, since, sort, desc)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	if len(posts) == 0 {
+		if !CheckThreadByID(id) {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by id"))
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("[]"))
 		return

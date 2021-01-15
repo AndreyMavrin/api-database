@@ -9,7 +9,12 @@ import (
 	"github.com/jackc/pgx"
 )
 
-func InsertPosts(posts []models.Post, thread models.Thread) ([]models.Post, error) {
+func InsertPosts(posts []models.Post, id int) ([]models.Post, error) {
+	forumSlug, err := SelectForumSlug(id)
+	if err != nil {
+		return nil, err
+	}
+
 	var insertedPosts []models.Post
 	query := `INSERT INTO posts(author, created, forum, message, parent, thread) VALUES `
 	var values []interface{}
@@ -21,7 +26,7 @@ func InsertPosts(posts []models.Post, thread models.Thread) ([]models.Post, erro
 		)
 
 		query += value
-		values = append(values, post.Author, timeCreated, thread.Forum, post.Message, post.Parent, thread.ID)
+		values = append(values, post.Author, timeCreated, forumSlug, post.Message, post.Parent, id)
 	}
 
 	query = strings.TrimSuffix(query, ",")
@@ -54,24 +59,24 @@ func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]mode
 	if since == 0 {
 		if sort == "flat" || sort == "" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created DESC, id DESC LIMIT $2;`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created DESC, id DESC LIMIT NULLIF($2, 0);`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created ASC, id LIMIT $2;`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created ASC, id LIMIT NULLIF($2, 0);`, threadID, limit)
 			}
 		} else if sort == "tree" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path DESC, id  DESC LIMIT $2;`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path DESC, id  DESC LIMIT NULLIF($2, 0);`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path, id LIMIT $2;`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path, id LIMIT NULLIF($2, 0);`, threadID, limit)
 			}
 		} else {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN
-				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id DESC LIMIT $2)
+				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id DESC LIMIT NULLIF($2, 0))
 				ORDER BY path[1] DESC, path, id;`, threadID, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN
-				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id LIMIT $2)
+				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id LIMIT NULLIF($2, 0))
 				ORDER BY path, id;`, threadID, limit)
 			}
 		}
@@ -79,26 +84,26 @@ func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]mode
 		if sort == "flat" || sort == "" {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND id < $2
-				ORDER BY created DESC, id DESC LIMIT $3;`, threadID, since, limit)
+				ORDER BY created DESC, id DESC LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND id > $2
-				ORDER BY created ASC, id LIMIT $3;`, threadID, since, limit)
+				ORDER BY created ASC, id LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			}
 		} else if sort == "tree" {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND PATH < (SELECT path FROM posts WHERE id = $2)
-				ORDER BY path DESC, id  DESC LIMIT $3;`, threadID, since, limit)
+				ORDER BY path DESC, id  DESC LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND PATH > (SELECT path FROM posts WHERE id = $2)
-				ORDER BY path, id LIMIT $3;`, threadID, since, limit)
+				ORDER BY path, id LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			}
 		} else {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread=$1 AND parent IS NULL AND PATH[1] <
-				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path, id;`, threadID, since, limit)
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT NULLIF($3, 0)) ORDER BY path[1] DESC, path, id;`, threadID, since, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread=$1 AND parent IS NULL AND PATH[1] >
-				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT $3) ORDER BY path, id;`, threadID, since, limit)
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT NULLIF($3, 0)) ORDER BY path, id;`, threadID, since, limit)
 			}
 		}
 	}
