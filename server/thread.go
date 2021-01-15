@@ -88,14 +88,11 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 
 	threads, err := SelectThreads(forum, since, limit, desc)
 	if err == pgx.ErrNoRows || len(threads) == 0 {
-		if !CheckForum(forum) {
+		if _, err := SelectForum(forum); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find forum"))
 			return
 		}
-	}
-
-	if len(threads) == 0 {
 		w.Write([]byte("[]"))
 		return
 	}

@@ -12,12 +12,6 @@ func InsertForum(forum models.Forum) (models.Forum, error) {
 	return f, err
 }
 
-func CheckForum(slug string) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM forums WHERE slug=$1;`, slug).Scan(&count)
-	return count > 0
-}
-
 func SelectForum(slug string) (models.Forum, error) {
 	row := models.DB.QueryRow(`SELECT username, posts, threads, slug, title FROM forums WHERE slug=$1;`, slug)
 	var f models.Forum

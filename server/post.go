@@ -58,7 +58,7 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		err = pgx.ErrNoRows
 	}
 	if err != nil {
-		if !CheckUserByNickname(posts[0].Author) {
+		if _, err := SelectUserByNickname(posts[0].Author); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find post author by nickname"))
 			return

@@ -13,12 +13,6 @@ func InsertUser(user models.User) error {
 	return err
 }
 
-func CheckUserByNickname(nickname string) bool {
-	var count int
-	models.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE nickname=$1;`, nickname).Scan(&count)
-	return count > 0
-}
-
 func SelectUsers(email, nickname string) ([]models.User, error) {
 	var users []models.User
 	rows, err := models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE email=$1 OR nickname=$2 LIMIT 2;`, email, nickname)
