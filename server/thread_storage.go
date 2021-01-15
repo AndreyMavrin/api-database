@@ -23,14 +23,14 @@ func InsertThread(thread models.Thread) (models.Thread, error) {
 }
 
 func SelectThread(slug string) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug=$1;`, slug)
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE slug=$1 LIMIT 1;`, slug)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
 }
 
 func SelectThreadByID(id int32) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE id = $1;`, id)
+	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE id = $1 LIMIT 1;`, id)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
@@ -73,22 +73,6 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 		threads = append(threads, th)
 	}
 	return threads, nil
-}
-
-func SelectThreadByPost(id int) (models.Thread, error) {
-	var thread models.Thread
-	row := models.DB.QueryRow(`SELECT thread FROM posts WHERE id = $1;`, id)
-	err := row.Scan(&thread.ID)
-	if err != nil {
-		return thread, err
-	}
-
-	thread, err = SelectThreadByID(thread.ID)
-	if err != nil {
-		return thread, err
-	}
-
-	return thread, nil
 }
 
 func UpdateThread(thread models.Thread) (models.Thread, error) {
