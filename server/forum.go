@@ -137,7 +137,7 @@ func ForumUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(users) == 0 {
-		if !CheckForum(slug) {
+		if _, err := SelectForum(slug); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find forum"))
 			return

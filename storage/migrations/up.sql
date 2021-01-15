@@ -1,14 +1,3 @@
-ALTER SYSTEM SET checkpoint_completion_target = '0.9';
-ALTER SYSTEM SET wal_buffers = '6912kB';
-ALTER SYSTEM SET default_statistics_target = '100';
-ALTER SYSTEM SET effective_io_concurrency = '200';
-ALTER SYSTEM SET max_worker_processes = '4';
-ALTER SYSTEM SET max_parallel_workers_per_gather = '2';
-ALTER SYSTEM SET max_parallel_workers = '4';
-ALTER SYSTEM SET max_parallel_maintenance_workers = '2';
-ALTER SYSTEM SET random_page_cost = '0.1';
-ALTER SYSTEM SET seq_page_cost = '0.1';
-
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE UNLOGGED TABLE "users" (
@@ -184,12 +173,14 @@ CREATE INDEX users_forum_forum_index ON users_forum ((users_forum.Slug));
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
 CREATE INDEX users_nickname_lower_index ON users (lower(users.nickname));
+CREATE INDEX users_nickname_index ON users (users.nickname);
 CREATE INDEX users_email_index ON users (lower(users.email));
 
+CREATE INDEX thread_slug_lower_index ON threads (lower(slug));
 CREATE INDEX thread_slug_index ON threads (slug);
-CREATE INDEX thread_slug_id_index ON threads (slug, id);
-CREATE INDEX thread_forum_lower_index ON threads (forum);
+CREATE INDEX thread_slug_id_index ON threads (lower(slug), id);
+CREATE INDEX thread_forum_lower_index ON threads (lower(forum));
 CREATE INDEX thread_id_forum_index ON threads (id, forum);
 CREATE INDEX thread_created_index ON threads (created);
 
-CREATE INDEX vote_nickname ON votes (nickname, thread, voice);
+CREATE INDEX vote_nickname ON votes (lower(nickname), thread, voice);
