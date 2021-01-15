@@ -5,10 +5,15 @@ import (
 )
 
 func InsertForum(forum models.Forum) (models.Forum, error) {
-	row := models.DB.QueryRow(`INSERT INTO forums(slug, title, username) VALUES ($1, $2, $3) RETURNING *;`,
-		forum.Slug, forum.Title, forum.User)
 	var f models.Forum
-	err := row.Scan(&f.User, &f.Posts, &f.Threads, &f.Slug, &f.Title)
+	user, err := SelectUserByNickname(forum.User)
+	if err != nil {
+		return f, err
+	}
+	row := models.DB.QueryRow(`INSERT INTO forums(slug, title, username) VALUES ($1, $2, $3) RETURNING *;`,
+		forum.Slug, forum.Title, user.Nickname)
+
+	err = row.Scan(&f.User, &f.Posts, &f.Threads, &f.Slug, &f.Title)
 	return f, err
 }
 
@@ -17,6 +22,12 @@ func SelectForum(slug string) (models.Forum, error) {
 	var f models.Forum
 	err := row.Scan(&f.User, &f.Posts, &f.Threads, &f.Slug, &f.Title)
 	return f, err
+}
+
+func SelectForumSlug(id int) (string, error) {
+	var slug string
+	err := models.DB.QueryRow(`SELECT forum FROM threads WHERE id=$1`, id).Scan(&slug)
+	return slug, err
 }
 
 func StatusForum() models.Status {

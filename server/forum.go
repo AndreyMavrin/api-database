@@ -7,6 +7,8 @@ import (
 	"park_2020/api-database/models"
 	"strconv"
 	"strings"
+
+	"github.com/jackc/pgx"
 )
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,35 +51,39 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := SelectUserByNickname(forum.User)
-	if err != nil {
+	forumInserted, err := InsertForum(forum)
+	if pgErr, ok := err.(pgx.PgError); ok {
+		switch pgErr.Code {
+		case "23505":
+			forum, err = SelectForum(forum.Slug)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			body, err := json.Marshal(forum)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			w.WriteHeader(http.StatusConflict)
+			w.Write(body)
+			return
+		case "23503":
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find user"))
+			return
+		}
+	}
+
+	if err == pgx.ErrNoRows {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find user"))
 		return
 	}
 
-	forum.User = user.Nickname
-
-	_, err = InsertForum(forum)
-	if err != nil {
-		forum, err = SelectForum(forum.Slug)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		body, err := json.Marshal(forum)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		w.WriteHeader(http.StatusConflict)
-		w.Write(body)
-		return
-	}
-
-	body, err := json.Marshal(forum)
+	body, err := json.Marshal(forumInserted)
 	if err != nil {
 		log.Println(err)
 		return

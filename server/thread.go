@@ -24,15 +24,9 @@ func CreateForumSlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	forum, err := SelectForum(slug)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread forum"))
-		return
-	}
-
-	thread.Forum = forum.Slug
-	threadInsert, err := InsertThread(thread)
+	var threadInsert models.Thread
+	thread.Forum = slug
+	threadInsert, err = InsertThread(thread)
 	if err != nil {
 		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23505" {
 			thread, err := SelectThread(thread.Slug.String)
@@ -88,7 +82,7 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 
 	threads, err := SelectThreads(forum, since, limit, desc)
 	if err == pgx.ErrNoRows || len(threads) == 0 {
-		if _, err := SelectForum(forum); err != nil {
+		if !CheckThread(forum) {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find forum"))
 			return
@@ -111,23 +105,16 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 func VoteThread(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var vote models.Vote
-	err := json.NewDecoder(r.Body).Decode(&vote)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slugOrID := strings.TrimSuffix(RequestUrl, "/vote")
 
-	var thread models.Thread
+	var err error
 	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
 
-		thread, err = SelectThread(slug)
+		id, err = SelectThreadID(slug)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by slug"))
@@ -135,8 +122,11 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if thread.ID != 0 {
-		id = int(thread.ID)
+	var vote models.Vote
+	err = json.NewDecoder(r.Body).Decode(&vote)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
 	vote.Thread = int64(id)
@@ -182,28 +172,27 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 
 	var thread models.Thread
 
-	id, errInt := strconv.Atoi(slugOrID)
 	var err error
+	id, errInt := strconv.Atoi(slugOrID)
 	if errInt != nil {
 		slug := slugOrID
 
-		thread, err = SelectThread(slug)
+		id, err = SelectThreadID(slug)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread"))
+			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
+	}
 
-	} else {
+	if r.Method == "GET" {
 		thread, err = SelectThreadByID(int32(id))
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
 			return
 		}
-	}
 
-	if r.Method == "GET" {
 		body, err := json.Marshal(thread)
 		if err != nil {
 			log.Println(err)
@@ -222,10 +211,11 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	threadUpdate.ID = thread.ID
+	threadUpdate.ID = int32(id)
 	thread, err = UpdateThread(threadUpdate)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by id"))
 		return
 	}
 
