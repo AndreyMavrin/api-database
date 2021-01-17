@@ -55,14 +55,24 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		err = pgx.ErrNoRows
 	}
 	if err != nil {
-		if _, err := SelectUserByNickname(posts[0].Author); err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find post author by nickname"))
+		if pgErr, ok := err.(pgx.PgError); ok {
+			switch pgErr.Code {
+			case "00409":
+				w.WriteHeader(http.StatusConflict)
+				w.Write(jsonToMessage("Parent post was created in another thread"))
+				return
+			}
+		}
+		if err == pgx.ErrNoRows {
+			if _, err := SelectUserByNickname(posts[0].Author); err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write(jsonToMessage("Can't find post author by nickname"))
+				return
+			}
+			w.WriteHeader(http.StatusConflict)
+			w.Write(jsonToMessage("Parent post was created in another thread"))
 			return
 		}
-		w.WriteHeader(http.StatusConflict)
-		w.Write(jsonToMessage("Parent post was created in another thread"))
-		return
 	}
 
 	body, err := json.Marshal(postsCreated)
@@ -151,44 +161,13 @@ func PostDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "GET" {
-		post, err := SelectPostByID(id)
+		related := r.URL.Query().Get("related")
+
+		postFull, err := SelectPostByID(id, strings.Split(related, ","))
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find post by id"))
 			return
-		}
-
-		related := r.URL.Query().Get("related")
-
-		postFull := map[string]interface{}{
-			"post": post,
-		}
-
-		if strings.Contains(related, "user") {
-			user, err := SelectUserByNickname(post.Author)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			postFull["author"] = user
-		}
-
-		if strings.Contains(related, "forum") {
-			forum, err := SelectForum(post.Forum)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			postFull["forum"] = forum
-		}
-
-		if strings.Contains(related, "thread") {
-			thread, err := SelectThreadByID(post.Thread)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			postFull["thread"] = thread
 		}
 
 		body, err := json.Marshal(postFull)
