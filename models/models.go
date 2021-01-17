@@ -19,9 +19,9 @@ type User struct {
 }
 
 type Forum struct {
-	Posts   int64  `json:"posts"`
+	Posts   int    `json:"posts"`
 	Slug    string `json:"slug"`
-	Threads int32  `json:"threads"`
+	Threads int    `json:"threads"`
 	Title   string `json:"title"`
 	User    string `json:"user"`
 }
@@ -30,22 +30,22 @@ type Thread struct {
 	Author  string         `json:"author"`
 	Created time.Time      `json:"created"`
 	Forum   string         `json:"forum"`
-	ID      int32          `json:"id"`
+	ID      int            `json:"id"`
 	Message string         `json:"message"`
 	Slug    JsonNullString `json:"slug"`
 	Title   string         `json:"title"`
-	Votes   int32          `json:"votes"`
+	Votes   int            `json:"votes"`
 }
 
 type Post struct {
 	Author   string           `json:"author"`
 	Created  time.Time        `json:"created"`
 	Forum    string           `json:"forum"`
-	ID       int64            `json:"id"`
+	ID       int              `json:"id"`
 	IsEdited bool             `json:"isEdited"`
 	Message  string           `json:"message"`
 	Parent   JsonNullInt64    `json:"parent"`
-	Thread   int32            `json:"thread,"`
+	Thread   int              `json:"thread,"`
 	Path     pgtype.Int8Array `json:"-"`
 }
 
