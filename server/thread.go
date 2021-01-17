@@ -102,24 +102,17 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func VoteThread(w http.ResponseWriter, r *http.Request) {
+func VoteThreadID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
-	slugOrID := strings.TrimSuffix(RequestUrl, "/vote")
+	slug := strings.TrimSuffix(RequestUrl, "/vote")
 
-	var err error
-	id, errInt := strconv.Atoi(slugOrID)
-	if errInt != nil {
-		slug := slugOrID
-
-		id, err = SelectThreadID(slug)
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread by slug"))
-			return
-		}
+	id, err := strconv.Atoi(slug)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
 	var vote models.Vote
@@ -146,7 +139,7 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	threadUpdate, err := SelectThreadByID(int32(id))
+	threadUpdate, err := SelectThreadByID(id)
 	if err != nil {
 		log.Println(err)
 		return
@@ -163,30 +156,75 @@ func VoteThread(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func ThreadDetails(w http.ResponseWriter, r *http.Request) {
+func VoteThread(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
-	slugOrID := strings.TrimSuffix(RequestUrl, "/details")
+	slug := strings.TrimSuffix(RequestUrl, "/vote")
 
-	var thread models.Thread
+	id, err := SelectThreadID(slug)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by slug"))
+		return
+	}
 
-	var err error
-	id, errInt := strconv.Atoi(slugOrID)
-	if errInt != nil {
-		slug := slugOrID
+	var vote models.Vote
+	err = json.NewDecoder(r.Body).Decode(&vote)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-		id, err = SelectThreadID(slug)
-		if err != nil {
+	vote.Thread = int64(id)
+	err = InsertVote(vote)
+	if err != nil {
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23505" {
+			err = UpdateVote(vote)
+			if err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write(jsonToMessage("Can't find thread by slug"))
+				return
+			}
+		} else {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
 	}
 
+	threadUpdate, err := SelectThreadByID(id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	body, err := json.Marshal(threadUpdate)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
+
+func ThreadDetailsID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
+	slugOrID := strings.TrimSuffix(RequestUrl, "/details")
+
+	id, err := strconv.Atoi(slugOrID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	if r.Method == "GET" {
-		thread, err = SelectThreadByID(int32(id))
+		thread, err := SelectThreadByID(id)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
@@ -211,8 +249,66 @@ func ThreadDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	threadUpdate.ID = int32(id)
-	thread, err = UpdateThread(threadUpdate)
+	threadUpdate.ID = id
+	thread, err := UpdateThread(threadUpdate)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by id"))
+		return
+	}
+
+	body, err := json.Marshal(thread)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
+
+func ThreadDetails(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
+	slug := strings.TrimSuffix(RequestUrl, "/details")
+
+	id, err := SelectThreadID(slug)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by slug"))
+		return
+	}
+
+	if r.Method == "GET" {
+		thread, err := SelectThreadByID(id)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find thread by id"))
+			return
+		}
+
+		body, err := json.Marshal(thread)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+		return
+	}
+
+	var threadUpdate models.Thread
+	err = json.NewDecoder(r.Body).Decode(&threadUpdate)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	threadUpdate.ID = id
+	thread, err := UpdateThread(threadUpdate)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find thread by id"))

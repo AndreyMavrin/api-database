@@ -81,10 +81,14 @@ func main() {
 	router.HandleFunc("/api/forum/{slug}/threads", server.ForumThreads).Methods(http.MethodGet)
 	router.HandleFunc("/api/forum/{slug}/users", server.ForumUsers).Methods(http.MethodGet)
 
-	router.HandleFunc("/api/thread/{slug_or_id}/create", server.CreatePosts).Methods(http.MethodPost)
-	router.HandleFunc("/api/thread/{slug_or_id}/vote", server.VoteThread).Methods(http.MethodPost)
-	router.HandleFunc("/api/thread/{slug_or_id}/details", server.ThreadDetails).Methods(http.MethodGet, http.MethodPost)
-	router.HandleFunc("/api/thread/{slug_or_id}/posts", server.ThreadPosts).Methods(http.MethodGet)
+	router.HandleFunc("/api/thread/{id:[0-9]+}/create", server.CreatePostsID).Methods(http.MethodPost)
+	router.HandleFunc("/api/thread/{slug}/create", server.CreatePosts).Methods(http.MethodPost)
+	router.HandleFunc("/api/thread/{id:[0-9]+}/vote", server.VoteThreadID).Methods(http.MethodPost)
+	router.HandleFunc("/api/thread/{slug}/vote", server.VoteThread).Methods(http.MethodPost)
+	router.HandleFunc("/api/thread/{id:[0-9]+}/details", server.ThreadDetailsID).Methods(http.MethodGet, http.MethodPost)
+	router.HandleFunc("/api/thread/{slug}/details", server.ThreadDetails).Methods(http.MethodGet, http.MethodPost)
+	router.HandleFunc("/api/thread/{id:[0-9]+}/posts", server.ThreadPostsID).Methods(http.MethodGet)
+	router.HandleFunc("/api/thread/{slug}/posts", server.ThreadPosts).Methods(http.MethodGet)
 
 	router.HandleFunc("/api/post/{id}/details", server.PostDetails).Methods(http.MethodGet, http.MethodPost)
 	router.HandleFunc("/api/service/status", server.StatusHandler).Methods(http.MethodGet)
