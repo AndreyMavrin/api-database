@@ -3,15 +3,36 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"park_2020/api-database/models"
 	"park_2020/api-database/server"
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/lib/pq"
 )
+
+type AccessLogger struct {
+	LogrusLogger *logrus.Entry
+}
+
+func (ac *AccessLogger) AccessLogMiddleware(_ *mux.Router) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			next.ServeHTTP(w, r)
+
+			ac.LogrusLogger.WithFields(logrus.Fields{
+				"method":      r.Method,
+				"remote_addr": r.RemoteAddr,
+				"work_time":   time.Since(start),
+			}).Info(r.URL.Path)
+		})
+	}
+}
 
 func main() {
 	connString := "host=localhost user=amavrin password=root dbname=forums sslmode=disable"
@@ -36,6 +57,21 @@ func main() {
 	}
 
 	router := mux.NewRouter()
+
+	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
+	logrus.WithFields(logrus.Fields{
+		"logger": "LOGRUS",
+	}).Info("Starting server")
+
+	AccessLogOut := new(AccessLogger)
+
+	contextLogger := logrus.WithFields(logrus.Fields{
+		"logger": "LOGRUS",
+	})
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	AccessLogOut.LogrusLogger = contextLogger
+
+	router.Use(AccessLogOut.AccessLogMiddleware(router))
 
 	router.HandleFunc("/health", server.HealthHandler)
 	router.HandleFunc("/api/user/{nickname}/create", server.CreateUser).Methods(http.MethodPost)

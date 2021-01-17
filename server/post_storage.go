@@ -59,51 +59,51 @@ func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]mode
 	if since == 0 {
 		if sort == "flat" || sort == "" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created DESC, id DESC LIMIT NULLIF($2, 0);`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY id DESC LIMIT NULLIF($2, 0);`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY created ASC, id LIMIT NULLIF($2, 0);`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY id LIMIT NULLIF($2, 0);`, threadID, limit)
 			}
 		} else if sort == "tree" {
 			if desc {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path DESC, id  DESC LIMIT NULLIF($2, 0);`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path DESC LIMIT NULLIF($2, 0);`, threadID, limit)
 			} else {
-				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path, id LIMIT NULLIF($2, 0);`, threadID, limit)
+				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 ORDER BY path LIMIT NULLIF($2, 0);`, threadID, limit)
 			}
 		} else {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN
 				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id DESC LIMIT NULLIF($2, 0))
-				ORDER BY path[1] DESC, path, id;`, threadID, limit)
+				ORDER BY path[1] DESC, path;`, threadID, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN
 				(SELECT id FROM posts WHERE thread=$1 AND parent IS NULL ORDER BY id LIMIT NULLIF($2, 0))
-				ORDER BY path, id;`, threadID, limit)
+				ORDER BY path;`, threadID, limit)
 			}
 		}
 	} else {
 		if sort == "flat" || sort == "" {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND id < $2
-				ORDER BY created DESC, id DESC LIMIT NULLIF($3, 0);`, threadID, since, limit)
+				ORDER BY id DESC LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND id > $2
-				ORDER BY created ASC, id LIMIT NULLIF($3, 0);`, threadID, since, limit)
+				ORDER BY id LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			}
 		} else if sort == "tree" {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND PATH < (SELECT path FROM posts WHERE id = $2)
-				ORDER BY path DESC, id  DESC LIMIT NULLIF($3, 0);`, threadID, since, limit)
+				ORDER BY path DESC LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE thread=$1 AND PATH > (SELECT path FROM posts WHERE id = $2)
-				ORDER BY path, id LIMIT NULLIF($3, 0);`, threadID, since, limit)
+				ORDER BY path LIMIT NULLIF($3, 0);`, threadID, since, limit)
 			}
 		} else {
 			if desc {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread=$1 AND parent IS NULL AND PATH[1] <
-				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT NULLIF($3, 0)) ORDER BY path[1] DESC, path, id;`, threadID, since, limit)
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT NULLIF($3, 0)) ORDER BY path[1] DESC, path;`, threadID, since, limit)
 			} else {
 				rows, err = models.DB.Query(`SELECT * FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread=$1 AND parent IS NULL AND PATH[1] >
-				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT NULLIF($3, 0)) ORDER BY path, id;`, threadID, since, limit)
+				(SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT NULLIF($3, 0)) ORDER BY path;`, threadID, since, limit)
 			}
 		}
 	}
@@ -125,14 +125,41 @@ func SelectPosts(threadID int, limit, since int, sort string, desc bool) ([]mode
 	return posts, nil
 }
 
-func SelectPostByID(id int) (models.Post, error) {
+func SelectPostByID(id int, related []string) (map[string]interface{}, error) {
 	var post models.Post
+	postFull := map[string]interface{}{}
+
 	row := models.DB.QueryRow(`SELECT author, created, forum, id, is_edited, message, parent, thread FROM posts WHERE id = $1 LIMIT 1;`, id)
 	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread)
 	if err != nil {
-		return post, err
+		return postFull, err
 	}
-	return post, nil
+	postFull["post"] = post
+
+	for _, param := range related {
+		switch param {
+		case "user":
+			author, err := SelectUserByNickname(post.Author)
+			if err != nil {
+				return postFull, err
+			}
+			postFull["author"] = author
+		case "thread":
+			thread, err := SelectThreadByID(post.Thread)
+			if err != nil {
+				return postFull, err
+			}
+			postFull["thread"] = thread
+		case "forum":
+			forumObj, err := SelectForum(post.Forum)
+			if err != nil {
+				return postFull, err
+			}
+			postFull["forum"] = forumObj
+		}
+	}
+
+	return postFull, nil
 }
 
 func UpdatePost(postUpdate models.PostUpdate, id int) (models.Post, error) {
