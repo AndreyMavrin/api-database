@@ -55,17 +55,20 @@ func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User
 
 	if desc {
 		if since != "" {
-			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) < LOWER($2)
-				ORDER BY nickname DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
+			rows, err = models.DB.Query(`SELECT users.about, users.email, users.fullName, users.nickname FROM users
+				JOIN users_forum uf on users.nickname = uf.nickname 
+				WHERE uf.slug =$1 AND uf.nickname < $2 COLLATE "C"
+				ORDER BY LOWER(users.nickname) COLLATE "C" DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
 		} else {
-			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE LOWER(slug)=LOWER($1) ORDER BY nickname DESC LIMIT NULLIF($2, 0);`, slug, limit)
+			rows, err = models.DB.Query(`SELECT users.about, users.email, users.fullName, users.nickname FROM users
+				JOIN users_forum uf on users.nickname = uf.nickname
+				WHERE uf.slug =$1 COLLATE "C" ORDER BY LOWER(users.nickname) COLLATE "C" DESC LIMIT NULLIF($2, 0);`, slug, limit)
 		}
 	} else {
-		rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) > LOWER($2)
-				ORDER BY nickname LIMIT NULLIF($3, 0);`, slug, since, limit)
+		rows, err = models.DB.Query(`SELECT users.about, users.email, users.fullName, users.nickname FROM users
+				JOIN users_forum uf on users.nickname = uf.nickname
+				WHERE uf.slug =$1 AND uf.nickname > $2 COLLATE "C"
+				ORDER BY LOWER(users.nickname) COLLATE "C" LIMIT NULLIF($3, 0);`, slug, since, limit)
 	}
 
 	if err != nil {

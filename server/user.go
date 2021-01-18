@@ -20,7 +20,6 @@ func jsonToMessage(message string) []byte {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/user/")
 	nickname := strings.TrimSuffix(RequestUrl, "/create")
@@ -63,7 +62,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserProfile(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/user/")
 	nickname := strings.TrimSuffix(RequestUrl, "/profile")

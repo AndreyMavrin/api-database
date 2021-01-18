@@ -129,8 +129,8 @@ func SelectPostByID(id int, related []string) (map[string]interface{}, error) {
 	var post models.Post
 	postFull := map[string]interface{}{}
 
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, is_edited, message, parent, thread FROM posts WHERE id = $1 LIMIT 1;`, id)
-	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread)
+	row := models.DB.QueryRow(`SELECT * FROM posts WHERE id = $1 LIMIT 1;`, id)
+	err := row.Scan(&post.Author, &post.Created, &post.Forum, &post.ID, &post.IsEdited, &post.Message, &post.Parent, &post.Thread, &post.Path)
 	if err != nil {
 		return postFull, err
 	}
@@ -165,7 +165,7 @@ func SelectPostByID(id int, related []string) (map[string]interface{}, error) {
 func UpdatePost(postUpdate models.PostUpdate, id int) (models.Post, error) {
 	var p models.Post
 	row := models.DB.QueryRow(`UPDATE posts SET message=COALESCE(NULLIF($1, ''), message), 
-		is_edited = CASE WHEN $1 = '' OR message = $1 THEN is_edited ELSE true END WHERE id=$2 RETURNING *;`, postUpdate.Message, id)
+		is_edited = CASE WHEN $1 = '' OR message = $1 THEN false ELSE true END WHERE id=$2 RETURNING *;`, postUpdate.Message, id)
 	err := row.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
 	return p, err
 }

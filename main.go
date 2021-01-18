@@ -32,6 +32,15 @@ import (
 // 	}
 // }
 
+func contentTypeMiddleware(_ *mux.Router) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func main() {
 	connString := "host=localhost user=amavrin password=root dbname=forums sslmode=disable"
 	pgxConn, err := pgx.ParseConnectionString(connString)
@@ -70,6 +79,8 @@ func main() {
 	// AccessLogOut.LogrusLogger = contextLogger
 
 	// router.Use(AccessLogOut.AccessLogMiddleware(router))
+
+	router.Use(contentTypeMiddleware(router))
 
 	router.HandleFunc("/health", server.HealthHandler)
 	router.HandleFunc("/api/user/{nickname}/create", server.CreateUser).Methods(http.MethodPost)

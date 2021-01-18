@@ -58,11 +58,8 @@ CREATE UNLOGGED TABLE "votes" (
 
 CREATE UNLOGGED TABLE users_forum
 (
-    nickname citext COLLATE "C" NOT NULL,
-    fullname TEXT NOT NULL,
-    about    TEXT,
-    email    CITEXT,
-    slug     citext COLLATE "C" NOT NULL,
+    nickname citext NOT NULL,
+    slug     citext NOT NULL,
     FOREIGN KEY (nickname) REFERENCES "users" (nickname),
     FOREIGN KEY (Slug) REFERENCES "forums" (Slug),
     UNIQUE (nickname, Slug)
@@ -118,14 +115,8 @@ $update_users_forum$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION update_user_forum() RETURNS TRIGGER AS
 $update_users_forum$
-DECLARE
-    m_fullname CITEXT;
-    m_about    CITEXT;
-    m_email CITEXT;
 BEGIN
-    SELECT fullname, about, email FROM users WHERE nickname = NEW.author INTO m_fullname, m_about, m_email;
-    INSERT INTO users_forum (nickname, fullname, about, email, slug)
-    VALUES (NEW.author, m_fullname, m_about, m_email, NEW.forum) on conflict do nothing;
+    INSERT INTO users_forum (nickname, Slug) VALUES (NEW.author, NEW.forum) on conflict do nothing;
     return NEW;
 end
 $update_users_forum$ LANGUAGE plpgsql;
@@ -178,15 +169,17 @@ CREATE INDEX post_path_id_index ON posts (id, (posts.path));
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
 CREATE INDEX users_nickname_lower_index ON users (lower(users.nickname));
+CREATE INDEX users_nickname_index ON users ((users.nickname));
 CREATE INDEX users_email_index ON users (lower(users.email));
 
-CREATE INDEX all_users_forum ON users_forum (nickname, fullname, about, email);
-CREATE INDEX users_forum_forum_user_index ON users_forum (lower(slug), lower(nickname));
-CREATE INDEX users_forum_forum_index ON users_forum (lower(slug));
+CREATE INDEX users_forum_forum_user_index ON users_forum (lower(slug), nickname);
+CREATE INDEX users_forum_user_index ON users_forum (nickname);
+CREATE INDEX users_forum_forum_index ON users_forum (slug);
 
 CREATE INDEX thread_slug_index ON threads (lower(slug));
+CREATE INDEX thread_slug_id_index ON threads (lower(slug), id);
 CREATE INDEX thread_forum_lower_index ON threads (lower(forum));
-CREATE INDEX thread_id_forum_index ON threads (lower(forum), created);
+CREATE INDEX thread_id_forum_index ON threads (id, forum);
 CREATE INDEX thread_created_index ON threads (created);
 
-CREATE INDEX vote_nickname ON votes (lower(nickname), thread);
+CREATE INDEX vote_nickname ON votes (lower(nickname), thread, voice);
