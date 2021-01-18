@@ -107,8 +107,8 @@ func (v *JsonNullString) UnmarshalJSON(data []byte) error {
 
 type Vote struct {
 	Nickname string `json:"nickname"`
-	Voice    int32  `json:"voice"`
-	Thread   int64  `json:"-"`
+	Voice    int    `json:"voice"`
+	Thread   int    `json:"-"`
 }
 
 type Status struct {

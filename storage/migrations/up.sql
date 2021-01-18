@@ -58,11 +58,11 @@ CREATE UNLOGGED TABLE "votes" (
 
 CREATE UNLOGGED TABLE users_forum
 (
-    nickname citext NOT NULL,
+    nickname citext COLLATE "C" NOT NULL,
     fullname TEXT NOT NULL,
     about    TEXT,
     email    CITEXT,
-    slug     citext NOT NULL,
+    slug     citext COLLATE "C" NOT NULL,
     FOREIGN KEY (nickname) REFERENCES "users" (nickname),
     FOREIGN KEY (Slug) REFERENCES "forums" (Slug),
     UNIQUE (nickname, Slug)
@@ -180,9 +180,9 @@ CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 CREATE INDEX users_nickname_lower_index ON users (lower(users.nickname));
 CREATE INDEX users_email_index ON users (lower(users.email));
 
-CREATE INDEX users_forum_forum_user_index ON users_forum (slug, nickname);
-CREATE INDEX users_forum_user_index ON users_forum (nickname);
-CREATE INDEX users_forum_forum_index ON users_forum (slug);
+CREATE INDEX all_users_forum ON users_forum (nickname, fullname, about, email);
+CREATE INDEX users_forum_forum_user_index ON users_forum (lower(slug), lower(nickname));
+CREATE INDEX users_forum_forum_index ON users_forum (lower(slug));
 
 CREATE INDEX thread_slug_index ON threads (lower(slug));
 CREATE INDEX thread_forum_lower_index ON threads (lower(forum));

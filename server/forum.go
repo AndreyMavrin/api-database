@@ -70,10 +70,6 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusConflict)
 			w.Write(body)
 			return
-		case "23503":
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find user"))
-			return
 		}
 	}
 

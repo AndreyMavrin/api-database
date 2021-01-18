@@ -16,9 +16,9 @@ func CreatePostsID(w http.ResponseWriter, r *http.Request) {
 
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
-	slugOrID := strings.TrimSuffix(RequestUrl, "/create")
+	ID := strings.TrimSuffix(RequestUrl, "/create")
 
-	id, err := strconv.Atoi(slugOrID)
+	id, err := strconv.Atoi(ID)
 	if err != nil {
 		log.Println(err)
 		return
@@ -141,9 +141,9 @@ func ThreadPostsID(w http.ResponseWriter, r *http.Request) {
 
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
-	slugOrID := strings.TrimSuffix(RequestUrl, "/posts")
+	ID := strings.TrimSuffix(RequestUrl, "/posts")
 
-	id, err := strconv.Atoi(slugOrID)
+	id, err := strconv.Atoi(ID)
 	if err != nil {
 		log.Println(err)
 		return
@@ -215,7 +215,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	if len(posts) == 0 {
 		if !CheckThreadByID(id) {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find thread by id"))
+			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
