@@ -186,7 +186,7 @@ CREATE INDEX users_forum_forum_index ON users_forum (slug);
 
 CREATE INDEX thread_slug_index ON threads (lower(slug));
 CREATE INDEX thread_forum_lower_index ON threads (lower(forum));
-CREATE INDEX thread_id_forum_index ON threads (forum, created);
+CREATE INDEX thread_id_forum_index ON threads (lower(forum), created);
 CREATE INDEX thread_created_index ON threads (created);
 
-CREATE INDEX vote_nickname ON votes (nickname, thread);
+CREATE INDEX vote_nickname ON votes (lower(nickname), thread);
