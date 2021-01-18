@@ -98,8 +98,14 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 }
 
 func UpdateThread(thread models.Thread) (models.Thread, error) {
-	row := models.DB.QueryRow(`UPDATE threads SET message=COALESCE(NULLIF($1, ''), message),
+	var row *pgx.Row
+	if thread.ID > 0 {
+		row = models.DB.QueryRow(`UPDATE threads SET message=COALESCE(NULLIF($1, ''), message),
 		title=COALESCE(NULLIF($2, ''), title) WHERE id = $3 RETURNING *;`, thread.Message, thread.Title, thread.ID)
+	} else {
+		row = models.DB.QueryRow(`UPDATE threads SET message=COALESCE(NULLIF($1, ''), message),
+		title=COALESCE(NULLIF($2, ''), title) WHERE LOWER(slug) = LOWER($3) RETURNING *;`, thread.Message, thread.Title, thread.Slug.String)
+	}
 
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)

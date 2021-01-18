@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"park_2020/api-database/models"
 
 	"github.com/jackc/pgx"
@@ -15,8 +14,8 @@ func InsertUser(user models.User) error {
 
 func SelectUsers(email, nickname string) ([]models.User, error) {
 	var users []models.User
-	rows, err := models.DB.Query(`SELECT about, email, fullname, nickname FROM users 
-	WHERE LOWER(email)=LOWER($1) OR LOWER(nickname)=LOWER($2) LIMIT 2;`, email, nickname)
+	rows, err := models.DB.Query(`SELECT * FROM users WHERE LOWER(email)=LOWER($1)
+	OR LOWER(nickname)=LOWER($2) LIMIT 2;`, email, nickname)
 	if err != nil {
 		return users, err
 	}
@@ -33,7 +32,7 @@ func SelectUsers(email, nickname string) ([]models.User, error) {
 }
 
 func SelectUserByNickname(nickname string) (models.User, error) {
-	row := models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE LOWER(nickname)=LOWER($1) LIMIT 1;`, nickname)
+	row := models.DB.QueryRow(`SELECT * FROM users WHERE LOWER(nickname)=LOWER($1) LIMIT 1;`, nickname)
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
 	return u, err
@@ -42,7 +41,7 @@ func SelectUserByNickname(nickname string) (models.User, error) {
 func UpdateUser(user models.User) (models.User, error) {
 	row := models.DB.QueryRow(`UPDATE users SET about=COALESCE(NULLIF($1, ''), about),
 				email=COALESCE(NULLIF($2, ''), email), 	fullname=COALESCE(NULLIF($3, ''), fullname)
-				WHERE nickname ILIKE $4 RETURNING *;`, user.About, user.Email, user.Fullname, user.Nickname)
+				WHERE LOWER(nickname)=LOWER($4) RETURNING *;`, user.About, user.Email, user.Fullname, user.Nickname)
 
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
@@ -57,20 +56,19 @@ func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User
 	if desc {
 		if since != "" {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE slug=$1 AND nickname < $2 COLLATE "C"
-				ORDER BY nickname COLLATE "C" DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
+				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) < LOWER($2)
+				ORDER BY nickname DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE slug=$1 ORDER BY nickname COLLATE "C" DESC LIMIT NULLIF($2, 0);`, slug, limit)
+				WHERE LOWER(slug)=LOWER($1) ORDER BY nickname DESC LIMIT NULLIF($2, 0);`, slug, limit)
 		}
 	} else {
 		rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE slug=$1 AND nickname > $2 COLLATE "C"
-				ORDER BY nickname COLLATE "C" LIMIT NULLIF($3, 0);`, slug, since, limit)
+				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) > LOWER($2)
+				ORDER BY nickname LIMIT NULLIF($3, 0);`, slug, since, limit)
 	}
 
 	if err != nil {
-		fmt.Println(err)
 		return users, err
 	}
 	defer rows.Close()
