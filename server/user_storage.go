@@ -15,7 +15,8 @@ func InsertUser(user models.User) error {
 
 func SelectUsers(email, nickname string) ([]models.User, error) {
 	var users []models.User
-	rows, err := models.DB.Query(`SELECT about, email, fullname, nickname FROM users WHERE email=$1 OR nickname=$2 LIMIT 2;`, email, nickname)
+	rows, err := models.DB.Query(`SELECT about, email, fullname, nickname FROM users 
+	WHERE LOWER(email)=LOWER($1) OR LOWER(nickname)=LOWER($2) LIMIT 2;`, email, nickname)
 	if err != nil {
 		return users, err
 	}
@@ -32,7 +33,7 @@ func SelectUsers(email, nickname string) ([]models.User, error) {
 }
 
 func SelectUserByNickname(nickname string) (models.User, error) {
-	row := models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE nickname=$1 LIMIT 1;`, nickname)
+	row := models.DB.QueryRow(`SELECT about, email, fullname, nickname FROM users WHERE LOWER(nickname)=LOWER($1) LIMIT 1;`, nickname)
 	var u models.User
 	err := row.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
 	return u, err
