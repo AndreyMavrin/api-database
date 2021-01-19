@@ -148,11 +148,11 @@ func SelectPostByID(id int, related []string) (map[string]interface{}, error) {
 			}
 			postFull["thread"] = thread
 		case "forum":
-			forumObj, err := SelectForum(post.Forum)
+			forum, err := SelectForum(post.Forum)
 			if err != nil {
 				return postFull, err
 			}
-			postFull["forum"] = forumObj
+			postFull["forum"] = forum
 		}
 	}
 

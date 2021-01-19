@@ -24,7 +24,7 @@ func SelectUsers(email, nickname string) ([]models.User, error) {
 		var u models.User
 		err = rows.Scan(&u.About, &u.Email, &u.Fullname, &u.Nickname)
 		if err != nil {
-			continue
+			return users, err
 		}
 		users = append(users, u)
 	}
