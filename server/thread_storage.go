@@ -84,7 +84,7 @@ func SelectThreads(forum, since string, limit int, desc bool) ([]models.Thread, 
 		var th models.Thread
 		err = rows.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 		if err != nil {
-			continue
+			return threads, err
 		}
 		threads = append(threads, th)
 	}
