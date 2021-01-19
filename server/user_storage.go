@@ -56,16 +56,16 @@ func SelectUsersByForum(slug, since string, limit int, desc bool) ([]models.User
 	if desc {
 		if since != "" {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) < LOWER($2)
-				ORDER BY nickname DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
+				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) < LOWER($2) COLLATE "C"
+				ORDER BY nickname COLLATE "C" DESC LIMIT NULLIF($3, 0);`, slug, since, limit)
 		} else {
 			rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE LOWER(slug)=LOWER($1) ORDER BY nickname DESC LIMIT NULLIF($2, 0);`, slug, limit)
+				WHERE LOWER(slug)=LOWER($1) ORDER BY nickname COLLATE "C" DESC LIMIT NULLIF($2, 0);`, slug, limit)
 		}
 	} else {
 		rows, err = models.DB.Query(`SELECT about, email, fullname, nickname FROM users_forum
-				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) > LOWER($2)
-				ORDER BY nickname LIMIT NULLIF($3, 0);`, slug, since, limit)
+				WHERE LOWER(slug)=LOWER($1) AND LOWER(nickname) > LOWER($2) COLLATE "C"
+				ORDER BY nickname COLLATE "C" LIMIT NULLIF($3, 0);`, slug, since, limit)
 	}
 
 	if err != nil {

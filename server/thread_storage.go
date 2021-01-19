@@ -33,12 +33,6 @@ func CheckThread(slug string) bool {
 	return exists
 }
 
-func CheckThreadByID(id int) bool {
-	var exists bool
-	models.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM threads WHERE id=$1)`, id).Scan(&exists)
-	return exists
-}
-
 func SelectThreadID(slug string) (int, error) {
 	var id int
 	row := models.DB.QueryRow(`SELECT id FROM threads WHERE LOWER(slug)=LOWER($1) LIMIT 1;`, slug)
@@ -47,14 +41,14 @@ func SelectThreadID(slug string) (int, error) {
 }
 
 func SelectThread(slug string) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE LOWER(slug)=LOWER($1) LIMIT 1;`, slug)
+	row := models.DB.QueryRow(`SELECT * FROM threads WHERE LOWER(slug)=LOWER($1) LIMIT 1;`, slug)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err
 }
 
 func SelectThreadByID(id int) (models.Thread, error) {
-	row := models.DB.QueryRow(`SELECT author, created, forum, id, message, slug, title, votes FROM threads WHERE id = $1 LIMIT 1;`, id)
+	row := models.DB.QueryRow(`SELECT * FROM threads WHERE id = $1 LIMIT 1;`, id)
 	var th models.Thread
 	err := row.Scan(&th.Author, &th.Created, &th.Forum, &th.ID, &th.Message, &th.Slug, &th.Title, &th.Votes)
 	return th, err

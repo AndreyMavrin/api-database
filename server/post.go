@@ -12,8 +12,6 @@ import (
 )
 
 func CreatePostsID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	ID := strings.TrimSuffix(RequestUrl, "/create")
@@ -69,8 +67,6 @@ func CreatePostsID(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePosts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
 	slug := strings.TrimSuffix(RequestUrl, "/create")
@@ -121,8 +117,6 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func ThreadPostsID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		limit = 0
@@ -156,7 +150,7 @@ func ThreadPostsID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(posts) == 0 {
-		if !CheckThreadByID(id) {
+		if _, err := SelectThreadByID(id); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
 			return
@@ -177,8 +171,6 @@ func ThreadPostsID(w http.ResponseWriter, r *http.Request) {
 }
 
 func ThreadPosts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		limit = 0
@@ -213,7 +205,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(posts) == 0 {
-		if !CheckThreadByID(id) {
+		if _, err := SelectThreadByID(id); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
@@ -234,8 +226,6 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostDetails(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/post/")
 	idString := strings.TrimSuffix(RequestUrl, "/details")

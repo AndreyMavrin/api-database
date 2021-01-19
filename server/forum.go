@@ -16,8 +16,6 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	status := StatusForum()
 	body, err := json.Marshal(status)
 	if err != nil {
@@ -30,7 +28,6 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ClearHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	err := ClearDB()
 	if err != nil {
 		log.Println(err)
@@ -42,8 +39,6 @@ func ClearHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateForum(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var forum models.Forum
 	err := json.NewDecoder(r.Body).Decode(&forum)
 	if err != nil {
@@ -90,7 +85,6 @@ func CreateForum(w http.ResponseWriter, r *http.Request) {
 }
 
 func ForumDetails(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/forum/")
 	slug := strings.TrimSuffix(RequestUrl, "/details")
@@ -114,7 +108,6 @@ func ForumDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func ForumUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	RequestUrl := r.URL.Path
 	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/forum/")
 	slug := strings.TrimSuffix(RequestUrl, "/users")
