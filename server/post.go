@@ -22,56 +22,7 @@ func CreatePostsID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if id > 1<<17 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(jsonToMessage("Can't find thread by id"))
-		return
-	}
-
-	var posts []models.Post
-	err = json.NewDecoder(r.Body).Decode(&posts)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	if len(posts) == 0 {
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("[]"))
-		return
-	}
-
-	postsCreated, err := InsertPosts(posts, id)
-	if len(postsCreated) == 0 {
-		err = pgx.ErrNoRows
-	}
-	if err != nil {
-		if _, err := SelectUserByNickname(posts[0].Author); err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(jsonToMessage("Can't find post author by nickname"))
-			return
-		}
-		w.WriteHeader(http.StatusConflict)
-		w.Write(jsonToMessage("Parent post was created in another thread"))
-		return
-	}
-
-	body, err := json.Marshal(postsCreated)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	w.Write(body)
-}
-
-func CreatePosts(w http.ResponseWriter, r *http.Request) {
-	RequestUrl := r.URL.Path
-	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
-	slug := strings.TrimSuffix(RequestUrl, "/create")
-
-	id, err := SelectThreadID(slug)
+	thread, err := SelectThreadByID(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(jsonToMessage("Can't find thread by slug"))
@@ -91,19 +42,65 @@ func CreatePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postsCreated, err := InsertPosts(posts, id)
-	if len(postsCreated) == 0 {
-		err = pgx.ErrNoRows
-	}
+	postsCreated, err := InsertPosts(posts, thread)
 	if err != nil {
-		if _, err := SelectUserByNickname(posts[0].Author); err != nil {
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23503" {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find post author by nickname"))
 			return
+		} else {
+			w.WriteHeader(http.StatusConflict)
+			w.Write(jsonToMessage("Parent post was created in another thread"))
+			return
 		}
-		w.WriteHeader(http.StatusConflict)
-		w.Write(jsonToMessage("Parent post was created in another thread"))
+	}
+
+	body, err := json.Marshal(postsCreated)
+	if err != nil {
+		log.Println(err)
 		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write(body)
+}
+
+func CreatePosts(w http.ResponseWriter, r *http.Request) {
+	RequestUrl := r.URL.Path
+	RequestUrl = strings.TrimPrefix(RequestUrl, "/api/thread/")
+	slug := strings.TrimSuffix(RequestUrl, "/create")
+
+	thread, err := SelectThread(slug)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonToMessage("Can't find thread by slug"))
+		return
+	}
+
+	var posts []models.Post
+	err = json.NewDecoder(r.Body).Decode(&posts)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if len(posts) == 0 {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("[]"))
+		return
+	}
+
+	postsCreated, err := InsertPosts(posts, thread)
+	if err != nil {
+		if pgErr, ok := err.(pgx.PgError); ok && pgErr.Code == "23503" {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(jsonToMessage("Can't find post author by nickname"))
+			return
+		} else {
+			w.WriteHeader(http.StatusConflict)
+			w.Write(jsonToMessage("Parent post was created in another thread"))
+			return
+		}
 	}
 
 	body, err := json.Marshal(postsCreated)

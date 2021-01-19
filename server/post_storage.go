@@ -9,12 +9,7 @@ import (
 	"github.com/jackc/pgx"
 )
 
-func InsertPosts(posts []models.Post, id int) ([]models.Post, error) {
-	forumSlug, err := SelectForumSlug(id)
-	if err != nil {
-		return nil, err
-	}
-
+func InsertPosts(posts []models.Post, thread models.Thread) ([]models.Post, error) {
 	var insertedPosts []models.Post
 	query := `INSERT INTO posts(author, created, forum, message, parent, thread) VALUES `
 	var values []interface{}
@@ -26,7 +21,7 @@ func InsertPosts(posts []models.Post, id int) ([]models.Post, error) {
 		)
 
 		query += value
-		values = append(values, post.Author, timeCreated, forumSlug, post.Message, post.Parent, id)
+		values = append(values, post.Author, timeCreated, thread.Forum, post.Message, post.Parent, thread.ID)
 	}
 
 	query = strings.TrimSuffix(query, ",")
@@ -42,11 +37,13 @@ func InsertPosts(posts []models.Post, id int) ([]models.Post, error) {
 		var p models.Post
 		err := rows.Scan(&p.Author, &p.Created, &p.Forum, &p.ID, &p.IsEdited, &p.Message, &p.Parent, &p.Thread, &p.Path)
 		if err != nil {
-			return nil, err
+			return nil, models.ErrConflict
 		}
-
 		insertedPosts = append(insertedPosts, p)
+	}
 
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	return insertedPosts, nil
 }

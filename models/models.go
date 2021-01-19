@@ -117,7 +117,3 @@ type Status struct {
 	Thread int `json:"thread"`
 	User   int `json:"user"`
 }
-
-type Error struct {
-	Message string `json:"message"`
-}
