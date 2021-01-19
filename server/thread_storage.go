@@ -33,12 +33,6 @@ func CheckThread(slug string) bool {
 	return exists
 }
 
-func CheckThreadByID(id int) bool {
-	var exists bool
-	models.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM threads WHERE id=$1)`, id).Scan(&exists)
-	return exists
-}
-
 func SelectThreadID(slug string) (int, error) {
 	var id int
 	row := models.DB.QueryRow(`SELECT id FROM threads WHERE LOWER(slug)=LOWER($1) LIMIT 1;`, slug)

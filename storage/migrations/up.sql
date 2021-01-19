@@ -56,13 +56,15 @@ CREATE UNLOGGED TABLE "votes" (
    UNIQUE (nickname, thread)
 );
 
-CREATE UNLOGGED TABLE users_forum
-(
-    nickname citext NOT NULL,
+CREATE UNLOGGED TABLE "users_forum" (
+    nickname CITEXT NOT NULL,
+    fullname TEXT NOT NULL,
+    about    TEXT,
+    email    CITEXT,
     slug     citext NOT NULL,
     FOREIGN KEY (nickname) REFERENCES "users" (nickname),
-    FOREIGN KEY (Slug) REFERENCES "forums" (Slug),
-    UNIQUE (nickname, Slug)
+    FOREIGN KEY (slug) REFERENCES "forums" (slug),
+    UNIQUE (nickname, slug)
 );
 
 CREATE OR REPLACE FUNCTION update_threads_count() RETURNS TRIGGER AS
@@ -115,8 +117,14 @@ $update_users_forum$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION update_user_forum() RETURNS TRIGGER AS
 $update_users_forum$
+DECLARE
+    m_fullname CITEXT;
+    m_about    CITEXT;
+    m_email CITEXT;
 BEGIN
-    INSERT INTO users_forum (nickname, Slug) VALUES (NEW.author, NEW.forum) on conflict do nothing;
+    SELECT fullname, about, email FROM users WHERE nickname = NEW.author INTO m_fullname, m_about, m_email;
+    INSERT INTO users_forum (nickname, fullname, about, email, slug)
+    VALUES (NEW.author, m_fullname, m_about, m_email, NEW.forum) on conflict do nothing;
     return NEW;
 end
 $update_users_forum$ LANGUAGE plpgsql;

@@ -76,7 +76,7 @@ func ForumThreads(w http.ResponseWriter, r *http.Request) {
 	forum := strings.TrimSuffix(RequestUrl, "/threads")
 
 	threads, err := SelectThreads(forum, since, limit, desc)
-	if err == pgx.ErrNoRows || len(threads) == 0 {
+	if len(threads) == 0 {
 		if !CheckThread(forum) {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find forum"))

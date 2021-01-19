@@ -150,7 +150,7 @@ func ThreadPostsID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(posts) == 0 {
-		if !CheckThreadByID(id) {
+		if _, err := SelectThreadByID(id); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by id"))
 			return
@@ -205,7 +205,7 @@ func ThreadPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(posts) == 0 {
-		if !CheckThreadByID(id) {
+		if _, err := SelectThreadByID(id); err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(jsonToMessage("Can't find thread by slug"))
 			return
