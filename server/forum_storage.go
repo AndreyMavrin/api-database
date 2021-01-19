@@ -24,12 +24,6 @@ func SelectForum(slug string) (models.Forum, error) {
 	return f, err
 }
 
-func SelectForumSlug(id int) (string, error) {
-	var slug string
-	err := models.DB.QueryRow(`SELECT forum FROM threads WHERE id=$1`, id).Scan(&slug)
-	return slug, err
-}
-
 func StatusForum() models.Status {
 	var status models.Status
 	models.DB.QueryRow(`SELECT COUNT(*) FROM users;`).Scan(&status.User)
