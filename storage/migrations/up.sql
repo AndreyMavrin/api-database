@@ -57,7 +57,7 @@ CREATE UNLOGGED TABLE "votes" (
 );
 
 CREATE UNLOGGED TABLE "users_forum" (
-    nickname CITEXT NOT NULL,
+    nickname CITEXT COLLATE "C" NOT NULL,
     fullname TEXT NOT NULL,
     about    TEXT,
     email    CITEXT,
