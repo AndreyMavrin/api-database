@@ -8,15 +8,9 @@ WORKDIR /app
 
 RUN go build -o api-server main.go
 
-FROM ubuntu:20.04 AS release
+FROM ubuntu:20.04
 
-# Make the "en_US.UTF-8" locale so postgres will be utf-8 enabled by default
-RUN apt-get -y update && apt-get install -y locales gnupg2 tzdata
-RUN locale-gen en_US.UTF-8
-RUN update-locale LANG=en_US.UTF-8
-
-ENV TZ=Russia/Moscow
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get -y update && apt-get install -y tzdata
 
 # install Postgres
 ENV PGVER 12

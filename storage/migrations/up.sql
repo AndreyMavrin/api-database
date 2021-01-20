@@ -165,22 +165,20 @@ CREATE TRIGGER post_insert_user_forum
     FOR EACH ROW
 EXECUTE PROCEDURE update_user_forum();
 
-CREATE INDEX post_first_parent_thread_index ON posts ((posts.path[1]), thread);
-CREATE INDEX post_first_parent_id_index ON posts ((posts.path[1]), id);
-CREATE INDEX post_first_parent_index ON posts ((posts.path[1]));
-CREATE INDEX post_path_index ON posts ((posts.path));
-CREATE INDEX post_thread_index ON posts (thread);
+CREATE INDEX post_id_path1_index ON posts (id, (posts.path[1]));
+CREATE INDEX post_thread_id_path1_parent_index ON posts (thread, id, (posts.path[1]), parent);
+CREATE INDEX post_thread_path_id_index ON posts (thread, path, id);
+CREATE INDEX post_path1_index ON posts ((posts.path[1]));
 CREATE INDEX post_thread_id_index ON posts (thread, id);
-CREATE INDEX post_path_id_index ON posts (id, (posts.path));
+CREATE INDEX post_thread_index ON posts (thread);
 
 CREATE INDEX forum_slug_lower_index ON forums (lower(forums.Slug));
 
 CREATE INDEX users_email_nickname_lower_index ON users (lower(users.email), lower(users.nickname));
 CREATE INDEX users_nickname_index ON users (lower(users.nickname));
 
-CREATE INDEX users_forum_forum_user_index ON users_forum (lower(slug), lower(nickname));
-CREATE INDEX users_forum_forum_index ON users_forum (lower(slug));
-CREATE INDEX users_forum_user_index ON users_forum (nickname);
+CREATE UNIQUE INDEX forum_users_unique on users_forum (slug, nickname);
+cluster users_forum using forum_users_unique;
 
 CREATE INDEX thread_forum_lower_index ON threads (lower(forum));
 CREATE INDEX thread_slug_index ON threads (lower(slug));
@@ -188,3 +186,4 @@ CREATE INDEX thread_slug_id_index ON threads (lower(forum), created);
 CREATE INDEX thread_created_index ON threads (created);
 
 CREATE INDEX vote_nickname ON votes (lower(nickname), thread);
+
