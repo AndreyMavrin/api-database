@@ -186,4 +186,3 @@ CREATE INDEX thread_slug_id_index ON threads (lower(forum), created);
 CREATE INDEX thread_created_index ON threads (created);
 
 CREATE INDEX vote_nickname ON votes (lower(nickname), thread);
-

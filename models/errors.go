@@ -29,8 +29,6 @@ func GetStatusCodePost(err error) int {
 		return http.StatusNotFound // 404
 	case ErrConflict:
 		return http.StatusConflict // 409
-	case ErrUnauthorized:
-		return http.StatusUnauthorized // 401
 	default:
 		return http.StatusInternalServerError // 500
 	}
